@@ -1,12 +1,20 @@
 # Pharma API Raw Material Costing (RMC) & Stoichiometry Engine
 
-A dedicated browser-based process chemistry and cost-contribution engine for Process R&D, Tech Transfer, and Chemical Plant Operations.
+A specialized, client-side process chemistry costing web application designed for Process Chemistry, Chemical R&D, and API Plant Operations.
+
+---
+
+## 💾 Project Persistence & Background Auto-Save
+
+1. **Page Refresh Protection**: Every input keystroke is stored in browser cache (`localStorage`). Refreshing or closing your browser tab preserves all data.
+2. **5-Second Background Disk Sync**: Click **"Link Local Disk Auto-Save (5s)"** to select a target `.xlsx` file on your computer. The application will write and sync all calculations to your local disk silently every 5 seconds.
+3. **Re-Open & Update Existing Projects**: Every exported `.xlsx` file includes an embedded `__RMC_PROJECT_DATA__` state. Click **"Open Saved Project (.xlsx)"** to upload any previous file and resume editing.
 
 ---
 
 ## 📋 Excel Price Master Upload Template
 
-To auto-fill prices, CAS numbers, molecular weights, and densities, prepare an Excel file (`.xlsx`) or `.csv` with these headers:
+To auto-fill prices, CAS numbers, molecular weights, and densities, upload an Excel file (`.xlsx`) or `.csv` with these headers:
 
 | Name of Raw Material | CAS No | Molecular Weight | Density | Rate/Kg |
 | :--- | :--- | :--- | :--- | :--- |
@@ -17,29 +25,14 @@ To auto-fill prices, CAS numbers, molecular weights, and densities, prepare an E
 
 ---
 
-## ⚗️ Stoichiometry & Calculation Engine
+## ⚗️ Process Stoichiometry & Mass Balance Equations
 
-### 1. Reference Material (Sr. No. 1)
-* Sr. No. 1 is the reference substrate ($\text{Mole Ratio} = 1.00$).
-* $\text{Moles} = \frac{\text{Mass (kg)} \times 1000}{\text{MW (g/mol)}}$
-
-### 2. Automated Stoichiometry (Sr. No. 2+)
-* **Mole Ratio Mode (Molar Equivalents)**:
-  $$\text{Required Moles} = \text{Moles of Sr. 1} \times \text{Mole Ratio}$$
-  $$\text{Quantity (kg)} = \frac{\text{Required Moles} \times \text{MW}}{1000}$$
-* **Volume Ratio Mode ($V/W$ in L/kg of Reference Material)**:
-  $$\text{Quantity (L)} = \text{Mass of Sr. 1 (kg)} \times \text{Volume Ratio}$$
-  $$\text{Equivalent Mass (kg)} = \text{Quantity (L)} \times \text{Density (g/mL)}$$
-
-### 3. Stage-wise Cost Subtotals
-* **Stage RM Cost (w/o Rec.)**: $\sum \text{Cost (w/o Rec.) of all materials in that stage}$
-* **Stage RM Cost (with Rec.)**: $\sum \text{Cost (with Rec.) of all materials in that stage}$
-* **Stage Cost Contribution**: $\frac{\text{Stage Cost (with Rec.)}}{\text{Grand Total API Cost (with Rec.)}} \times 100$
-
----
-
-## 🌐 Deploy to GitHub Pages
-
-1. Push these updated files (`index.html`, `style.css`, `app.js`, `README.md`) to your GitHub repository.
-2. The GitHub Pages deployment will trigger automatically.
-3. Access your updated live app at: `https://<your-username>.github.io/<repo-name>/`
+* **Sr. No. 1 Reference**: Fixed at Mole Ratio `1.00`.
+  $$\text{Moles} = \frac{\text{Mass (kg)} \times 1000}{\text{MW (g/mol)}}$$
+* **Sr. No. 2+ Stoichiometry**:
+  * *Mole Ratio*: $\text{Qty (kg)} = \frac{(\text{Ref Moles} \times \text{Mole Ratio}) \times \text{MW}}{1000}$
+  * *Volume Ratio ($V/W$)*: $\text{Qty (L)} = \text{Ref Mass (kg)} \times \text{Vol Ratio}$
+* **Theoretical Yield (kg)**:
+  $$\text{Theoretical Output} = \frac{\text{Moles of Sr. 1} \times \text{Product MW}}{1000}$$
+* **% Molar Yield**:
+  $$\% \text{ Molar Yield} = \left(\frac{\text{Actual Output (kg)} \times 1000 / \text{Product MW}}{\text{Moles of Sr. 1}}\right) \times 100$$
