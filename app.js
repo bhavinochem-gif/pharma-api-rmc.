@@ -2,7 +2,7 @@
 let priceMaster = {};
 let stageCount = 0;
 
-// Internal solvent density database (g/mL)
+// Internal common solvent density database (g/mL)
 const SOLVENT_DENSITIES = {
   "water": 1.000,
   "methanol": 0.792,
@@ -57,7 +57,7 @@ function setupEventListeners() {
   document.getElementById("btnExport").addEventListener("click", exportToExcel);
 }
 
-// Upload & Parse Excel Master
+// Upload & Parse Excel Master (No SAP Code)
 function handleExcelUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -74,15 +74,14 @@ function handleExcelUpload(e) {
     priceMaster = {};
 
     jsonData.forEach((row) => {
-      const name = (row["Name"] || row["RM Name"] || row["Material"] || "").toString().trim();
-      const sap = (row["SAP Code"] || row["SAP"] || "").toString().trim();
-      const cas = (row["CAS No"] || row["CAS"] || "").toString().trim();
-      const mw = parseFloat(row["MW"] || row["Molecular Weight"] || 0);
+      const name = (row["Name of Raw Material"] || row["Name"] || row["RM Name"] || row["Material"] || "").toString().trim();
+      const cas = (row["CAS No"] || row["CAS No."] || row["CAS"] || "").toString().trim();
+      const mw = parseFloat(row["Molecular Weight"] || row["MW"] || 0);
       const density = parseFloat(row["Density"] || 0);
-      const rate = parseFloat(row["Rate"] || row["Rate/Kg"] || row["Price"] || 0);
+      const rate = parseFloat(row["Rate/Kg"] || row["Rate"] || row["Price"] || 0);
 
       if (name) {
-        priceMaster[name.toLowerCase()] = { name, sap, cas, mw, density, rate };
+        priceMaster[name.toLowerCase()] = { name, cas, mw, density, rate };
         const option = document.createElement("option");
         option.value = name;
         dataList.appendChild(option);
@@ -95,7 +94,7 @@ function handleExcelUpload(e) {
   reader.readAsArrayBuffer(file);
 }
 
-// Add New Reaction Stage
+// Add New Reaction Stage Card
 function addNewStage(defaultStageName) {
   stageCount++;
   const stageId = `stage_${Date.now()}_${stageCount}`;
@@ -106,7 +105,6 @@ function addNewStage(defaultStageName) {
   stageCard.id = stageId;
 
   stageCard.innerHTML = `
-    <!-- Stage Header -->
     <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center space-x-2 flex-grow max-w-md">
         <span class="bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded stage-badge">Stage</span>
@@ -128,13 +126,11 @@ function addNewStage(defaultStageName) {
       </div>
     </div>
 
-    <!-- RM Table Scroll -->
     <div class="table-scroll">
       <table class="rmc-table" id="table_${stageId}">
         <thead>
           <tr>
             <th>Sr.</th>
-            <th>SAP Code</th>
             <th>CAS No.</th>
             <th style="min-width: 170px;">Name of Raw Material</th>
             <th>Density<br/>(g/mL)</th>
@@ -159,8 +155,29 @@ function addNewStage(defaultStageName) {
       </table>
     </div>
 
-    <!-- Stage Product, Yield & Mass Balance Control Panel -->
-    <div class="bg-slate-50/80 p-4 border-t border-slate-200 space-y-3">
+    <div class="bg-slate-100/90 px-4 py-2.5 border-t border-b border-slate-200 flex flex-wrap justify-between items-center text-xs">
+      <span class="font-bold text-slate-700 uppercase tracking-wide flex items-center">
+        <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1 text-indigo-600"></i> Stage Cost Subtotals
+      </span>
+      <div class="flex items-center space-x-6">
+        <div>
+          <span class="text-slate-500 font-medium">Stage Cost (w/o Rec.):</span>
+          <span class="stage-subtotal-wo-rec font-bold text-slate-800 ml-1">₹ 0.00</span>
+          <span class="text-[10px] text-slate-400">/kg API</span>
+        </div>
+        <div>
+          <span class="text-emerald-700 font-medium">Stage Cost (with Rec.):</span>
+          <span class="stage-subtotal-w-rec font-bold text-emerald-700 ml-1">₹ 0.00</span>
+          <span class="text-[10px] text-emerald-600">/kg API</span>
+        </div>
+        <div>
+          <span class="text-indigo-700 font-medium">Stage Cost Contribution:</span>
+          <span class="stage-subtotal-cont-rec font-bold text-indigo-800 ml-1">0.00%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-50/80 p-4 space-y-3">
       <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
         <div class="md:col-span-2">
           <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Isolated Product / Intermediate Name</label>
@@ -191,12 +208,11 @@ function addNewStage(defaultStageName) {
         </div>
       </div>
 
-      <!-- Mass Balance Strip -->
       <div class="pt-2 border-t border-slate-200/60 flex flex-wrap justify-between items-center text-xs text-slate-600 gap-3">
         <div class="flex items-center space-x-4">
           <span><strong>Total Mass In:</strong> <span class="stage-mass-in font-bold text-slate-800">0.00 kg</span></span>
           <span><strong>Recovered Solvents:</strong> <span class="stage-mass-rec font-bold text-emerald-700">0.00 kg</span></span>
-          <span><strong>Unaccounted Loss / ML:</strong> <span class="stage-mass-loss font-bold text-rose-600">0.00 kg</span></span>
+          <span><strong>Unaccounted Loss:</strong> <span class="stage-mass-loss font-bold text-rose-600">0.00 kg</span></span>
         </div>
         <div class="flex items-center space-x-4">
           <span><strong>% w/w Yield:</strong> <span class="stage-ww-yield font-bold text-indigo-700">0.00%</span></span>
@@ -241,7 +257,6 @@ function updateStageNumbersAndCascade() {
           rmInput.readOnly = false;
         }
       } else {
-        // From Stage-2 onwards: Sr. No. 1 automatically cascades from the previous stage product
         const prevCard = stageCards[index - 1];
         const prevProdName = prevCard.querySelector(".stage-prod-name").value.trim() || `Intermediate Stage-${index}`;
         const prevProdMW = parseFloat(prevCard.querySelector(".stage-prod-mw").value) || 0;
@@ -261,7 +276,7 @@ function handleStageNameChange() {
   recalculateAll();
 }
 
-// Add Raw Material Row
+// Add Raw Material Row (No SAP Code)
 function addMaterialRow(stageId) {
   const tbody = document.querySelector(`#table_${stageId} tbody`);
   const rowCount = tbody.children.length + 1;
@@ -270,14 +285,13 @@ function addMaterialRow(stageId) {
 
   row.innerHTML = `
     <td class="text-center font-bold text-slate-500 sr-no">${rowCount}</td>
-    <td><input type="text" class="sap-code w-20" placeholder="SAP Code" /></td>
     <td><input type="text" class="cas-no w-24" placeholder="CAS No." /></td>
     <td>
       <div class="flex items-center space-x-1">
         <input 
           type="text" 
           list="rmMasterList" 
-          class="rm-name w-36 font-medium" 
+          class="rm-name w-40 font-medium" 
           placeholder="Select/Enter RM" 
           onchange="autoFillRM(this)" 
         />
@@ -293,7 +307,7 @@ function addMaterialRow(stageId) {
     </td>
     <td><input type="number" step="any" class="density w-16 text-right" value="1.0" oninput="recalculateAll()" /></td>
     <td>
-      <select class="ratio-type text-xs" onchange="handleRatioTypeChange(this)">
+      <select class="ratio-type text-xs" onchange="recalculateAll()">
         <option value="mole">Mole Ratio</option>
         <option value="volume">Vol Ratio (V/W)</option>
       </select>
@@ -302,9 +316,9 @@ function addMaterialRow(stageId) {
       <input 
         type="number" 
         step="any" 
-        class="mole-vol-ratio w-16 text-right ${isFirstRow ? 'bg-slate-100 font-bold' : ''}" 
-        value="${isFirstRow ? '1.00' : '1.00'}" 
-        ${isFirstRow ? 'readonly' : ''} 
+        class="mole-vol-ratio w-16 text-right ${isFirstRow ? 'bg-slate-100 font-bold text-slate-600' : ''}" 
+        value="1.00" 
+        ${isFirstRow ? 'readonly title="Fixed at 1.00 (Reference Substrate)"' : ''} 
         oninput="recalculateAll()" 
       />
     </td>
@@ -356,11 +370,7 @@ function removeRow(btn) {
   recalculateAll();
 }
 
-function handleRatioTypeChange(selectElem) {
-  recalculateAll();
-}
-
-// Auto-fill RM from local Excel Master and internal solvent library
+// Auto-fill RM from local Excel Master
 function autoFillRM(input) {
   const row = input.closest("tr");
   const val = input.value.trim().toLowerCase();
@@ -368,7 +378,6 @@ function autoFillRM(input) {
   // 1. Check Excel Master
   if (priceMaster[val]) {
     const item = priceMaster[val];
-    row.querySelector(".sap-code").value = item.sap || "";
     row.querySelector(".cas-no").value = item.cas || "";
     row.querySelector(".mw").value = item.mw || 0;
     if (item.density > 0) row.querySelector(".density").value = item.density;
@@ -385,7 +394,7 @@ function autoFillRM(input) {
   recalculateAll();
 }
 
-// Auto Fetch Product MW online
+// Auto Fetch Product MW online via PubChem
 async function fetchProductMWOnline(btn) {
   const card = btn.closest(".stage-card");
   const prodName = card.querySelector(".stage-prod-name").value.trim();
@@ -409,7 +418,7 @@ async function fetchProductMWOnline(btn) {
         recalculateAll();
       }
     } else {
-      alert(`No record found for "${prodName}".`);
+      alert(`No online record found for "${prodName}".`);
     }
   } catch (err) {
     console.error("PubChem Error:", err);
@@ -455,7 +464,7 @@ async function fetchOnlineChemData(btn, inputElement) {
       mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
     }
 
-    // Check Local/Common density library
+    // Check Local density library
     let density = SOLVENT_DENSITIES[rmName.toLowerCase()] || 0;
 
     if (casNo) row.querySelector(".cas-no").value = casNo;
@@ -480,7 +489,7 @@ async function fetchOnlineChemData(btn, inputElement) {
   }
 }
 
-// Master Process Chemistry, Yield & Mass Balance Engine
+// Master Process Chemistry, Yield, Subtotals & Stoichiometry Engine
 function recalculateAll() {
   const apiBatchSize = parseFloat(document.getElementById("apiBatchSize").value) || 1;
   const stageCards = document.querySelectorAll(".stage-card");
@@ -500,18 +509,20 @@ function recalculateAll() {
     const refDensity = parseFloat(refRow.querySelector(".density").value) || 1.0;
     const refMw = parseFloat(refRow.querySelector(".mw").value) || 0;
 
-    // Convert Sr. No. 1 Qty to Kg
+    // Convert Sr. No. 1 Qty to mass in Kg
     let refQtyInKg = refQtyInput;
     if (refUnit === "L") refQtyInKg = refQtyInput * refDensity;
     else if (refUnit === "g") refQtyInKg = refQtyInput / 1000;
 
-    // Sr. No. 1 Moles
+    // Sr. No. 1 Moles and Self Mole Ratio (Moles/Moles = 1.00)
     const refMoles = refMw > 0 ? (refQtyInKg * 1000) / refMw : 0;
     refRow.querySelector(".moles").innerText = refMoles.toFixed(2);
     refRow.querySelector(".mole-vol-ratio").value = "1.00";
 
     let stageTotalMassInKg = 0;
     let stageTotalRecoveredKg = 0;
+    let stageSubtotalWoRec = 0;
+    let stageSubtotalWRec = 0;
 
     // 2. Compute Sr. No. 2 onwards based on selected Ratio Type
     rows.forEach((row, index) => {
@@ -546,7 +557,7 @@ function recalculateAll() {
         row.querySelector(".qty").value = qty.toFixed(3);
       }
 
-      // Convert current row quantity to effective mass (kg) for mass balance
+      // Convert current row quantity to effective mass (kg)
       let rowQtyKg = qty;
       if (unit === "L") rowQtyKg = qty * density;
       else if (unit === "g") rowQtyKg = qty / 1000;
@@ -562,7 +573,7 @@ function recalculateAll() {
       const qtyPerKg = rowQtyKg / apiBatchSize;
       const qtyPerKgRec = qtyPerKg * (1 - recPercent / 100);
 
-      // Costs (Rate is based on input unit)
+      // Costs
       const costWithoutRec = (qty / apiBatchSize) * rate;
       const costWithRec = costWithoutRec * (1 - recPercent / 100);
 
@@ -571,11 +582,17 @@ function recalculateAll() {
       row.querySelector(".cost-wo-rec").innerText = costWithoutRec.toFixed(2);
       row.querySelector(".cost-w-rec").innerText = costWithRec.toFixed(2);
 
+      stageSubtotalWoRec += costWithoutRec;
+      stageSubtotalWRec += costWithRec;
       grandTotalCostWithoutRec += costWithoutRec;
       grandTotalCostWithRec += costWithRec;
     });
 
     globalTotalInputMassKg += stageTotalMassInKg;
+
+    // Update Stage Cost Subtotals
+    stageCard.querySelector(".stage-subtotal-wo-rec").innerText = `₹ ${stageSubtotalWoRec.toFixed(2)}`;
+    stageCard.querySelector(".stage-subtotal-w-rec").innerText = `₹ ${stageSubtotalWRec.toFixed(2)}`;
 
     // 3. Stage-Wise Yield & Mass Balance Calculations
     const prodMW = parseFloat(stageCard.querySelector(".stage-prod-mw").value) || 0;
@@ -583,15 +600,9 @@ function recalculateAll() {
 
     // Theoretical Yield (kg) = (Ref Moles * Product MW) / 1000
     const theorOutKg = (refMoles > 0 && prodMW > 0) ? (refMoles * prodMW) / 1000 : 0;
-    // Actual Moles = (Actual Kg * 1000) / Product MW
     const actualMoles = (actualOutKg > 0 && prodMW > 0) ? (actualOutKg * 1000) / prodMW : 0;
-
-    // % Molar Yield = (Actual Moles / Ref Moles) * 100
     const molarYieldPct = refMoles > 0 ? (actualMoles / refMoles) * 100 : 0;
-    // % w/w (Mass) Yield = (Actual Out Kg / Ref In Kg) * 100
     const wwYieldPct = refQtyInKg > 0 ? (actualOutKg / refQtyInKg) * 100 : 0;
-
-    // Mass Balance & Process Mass Intensity (PMI)
     const massLossKg = Math.max(0, stageTotalMassInKg - (actualOutKg + stageTotalRecoveredKg));
     const stagePMI = actualOutKg > 0 ? stageTotalMassInKg / actualOutKg : 0;
 
@@ -609,16 +620,23 @@ function recalculateAll() {
     stageCard.querySelector(".stage-pmi").innerText = stagePMI.toFixed(2);
   });
 
-  // 4. Compute Percentage Cost Contributions
-  document.querySelectorAll(".stage-card tbody tr").forEach((row) => {
-    const costWo = parseFloat(row.querySelector(".cost-wo-rec").innerText) || 0;
-    const costW = parseFloat(row.querySelector(".cost-w-rec").innerText) || 0;
+  // 4. Compute Percentage Cost Contributions (Row-wise and Stage-wise)
+  stageCards.forEach((stageCard) => {
+    let stageCostWithRecSum = 0;
+    stageCard.querySelectorAll("tbody tr").forEach((row) => {
+      const costWo = parseFloat(row.querySelector(".cost-wo-rec").innerText) || 0;
+      const costW = parseFloat(row.querySelector(".cost-w-rec").innerText) || 0;
+      stageCostWithRecSum += costW;
 
-    const contWo = grandTotalCostWithoutRec > 0 ? (costWo / grandTotalCostWithoutRec) * 100 : 0;
-    const contW = grandTotalCostWithRec > 0 ? (costW / grandTotalCostWithRec) * 100 : 0;
+      const contWo = grandTotalCostWithoutRec > 0 ? (costWo / grandTotalCostWithoutRec) * 100 : 0;
+      const contW = grandTotalCostWithRec > 0 ? (costW / grandTotalCostWithRec) * 100 : 0;
 
-    row.querySelector(".cont-wo-rec").innerText = `${contWo.toFixed(2)}%`;
-    row.querySelector(".cont-w-rec").innerText = `${contW.toFixed(2)}%`;
+      row.querySelector(".cont-wo-rec").innerText = `${contWo.toFixed(2)}%`;
+      row.querySelector(".cont-w-rec").innerText = `${contW.toFixed(2)}%`;
+    });
+
+    const stageContPct = grandTotalCostWithRec > 0 ? (stageCostWithRecSum / grandTotalCostWithRec) * 100 : 0;
+    stageCard.querySelector(".stage-subtotal-cont-rec").innerText = `${stageContPct.toFixed(2)}%`;
   });
 
   // 5. Update Global Summary Dashboard
@@ -633,7 +651,7 @@ function recalculateAll() {
   document.getElementById("cumulativePMI").innerText = cumulativePMI.toFixed(2);
 }
 
-// Export formatted Excel with Yield and Mass Balance Report
+// Export formatted Excel (No SAP Code)
 function exportToExcel() {
   const projectName = document.getElementById("projectName").value || "Pharma_API_RMC";
   const wb = XLSX.utils.book_new();
@@ -647,20 +665,22 @@ function exportToExcel() {
     const theorKg = stageCard.querySelector(".stage-theor-qty").innerText;
     const molarYield = stageCard.querySelector(".stage-molar-yield").innerText;
     const wwYield = stageCard.querySelector(".stage-ww-yield").innerText;
-    const massIn = stageCard.querySelector(".stage-mass-in").innerText;
-    const massRec = stageCard.querySelector(".stage-mass-rec").innerText;
-    const stagePMI = stageCard.querySelector(".stage-pmi").innerText;
+    const stageCostWo = stageCard.querySelector(".stage-subtotal-wo-rec").innerText;
+    const stageCostW = stageCard.querySelector(".stage-subtotal-w-rec").innerText;
+    const stageCont = stageCard.querySelector(".stage-subtotal-cont-rec").innerText;
 
     exportData.push({ "Stage / Material": `=== ${stageName.toUpperCase()} ===` });
     exportData.push({
-      "Stage / Material": `Product: ${prodName} | MW: ${prodMw} g/mol | Actual Out: ${actualKg} kg | Theor Out: ${theorKg} | % Molar Yield: ${molarYield} | % w/w: ${wwYield} | Total Mass In: ${massIn} | Recovered: ${massRec} | Stage PMI: ${stagePMI}`
+      "Stage / Material": `Product: ${prodName} \vert{} MW:${prodMw} g/mol | Actual Out: ${actualKg} kg \vert{} Theor Out:${theorKg} | % Molar Yield: ${molarYield} \vert{} \% w/w:${wwYield}`
+    });
+    exportData.push({
+      "Stage / Material": `STAGE SUBTOTAL: Cost w/o Rec: ${stageCostWo} | Cost with Rec: ${stageCostW} \vert{} Stage Contribution:${stageCont}`
     });
 
     const rows = stageCard.querySelectorAll("tbody tr");
     rows.forEach((row) => {
       exportData.push({
         "Sr. No.": row.querySelector(".sr-no").innerText,
-        "SAP Code": row.querySelector(".sap-code").value,
         "CAS No.": row.querySelector(".cas-no").value,
         "Name of RM": row.querySelector(".rm-name").value,
         "Density (g/mL)": row.querySelector(".density").value,
@@ -683,6 +703,6 @@ function exportToExcel() {
   });
 
   const ws = XLSX.utils.json_to_sheet(exportData);
-  XLSX.utils.book_append_sheet(wb, ws, "RMC_Yield_Report");
-  XLSX.writeFile(wb, `${projectName.replace(/\s+/g, "_")}_RMC_Yield_MassBalance.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, "RMC_Report");
+  XLSX.writeFile(wb, `${projectName.replace(/\s+/g, "_")}_RMC_Costing.xlsx`);
 }
