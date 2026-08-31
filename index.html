@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pharma API - RMC, Mass Balance & Yield Calculator</title>
+  <title>Pharma API - RMC, Mass Balance & Yield Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,12 +17,33 @@
         <i data-lucide="flask-conical" class="w-8 h-8 text-teal-400"></i>
         <div>
           <h1 class="text-xl font-bold tracking-tight">Pharma API RMC & Stoichiometry Engine</h1>
-          <p class="text-xs text-indigo-200">Process Chemistry Cost Contribution, Stage Subtotals & Solvent Recovery</p>
+          <div class="flex items-center space-x-2 text-xs text-indigo-200">
+            <span>Process Chemistry Cost Contribution</span>
+            <span>•</span>
+            <span id="autoSaveIndicator" class="text-emerald-400 font-medium flex items-center">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i> Auto-saved locally
+            </span>
+          </div>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
-        <button id="btnExport" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center shadow transition">
-          <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export Complete RMC Sheet
+
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="bg-indigo-800 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center cursor-pointer shadow transition border border-indigo-600">
+          <i data-lucide="folder-open" class="w-4 h-4 mr-1.5 text-teal-300"></i> Open Saved Project (.xlsx)
+          <input type="file" id="projectFileInput" accept=".xlsx, .xls" class="hidden" />
+        </label>
+
+        <button id="btnLinkLocalFile" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow transition border border-slate-600">
+          <i data-lucide="hard-drive-download" class="w-4 h-4 mr-1.5 text-amber-400"></i>
+          <span id="syncBtnLabel">Link Local Disk Auto-Save (5s)</span>
+        </button>
+
+        <button id="btnExport" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow transition">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export RMC Sheet
+        </button>
+
+        <button id="btnResetProject" class="bg-rose-900/60 hover:bg-rose-800 text-rose-200 px-2.5 py-2 rounded-lg text-xs font-semibold flex items-center transition" title="Reset all data">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
         </button>
       </div>
     </div>
