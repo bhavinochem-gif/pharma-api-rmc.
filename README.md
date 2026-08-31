@@ -1,45 +1,45 @@
-# Pharma API Raw Material Costing (RMC), Mass Balance & Yield Calculator
+# Pharma API Raw Material Costing (RMC) & Stoichiometry Engine
 
-A browser-based stoichiometry, solvent recovery, and process mass balance tool built for Pharmaceutical Process R&D, Pilot Plant, and Commercial Chemical Manufacturing.
-
----
-
-## 🧪 Mass Balance & Yield Equations
-
-### 1. Theoretical vs. Actual Yield
-* **Theoretical Output (kg)**:
-  $$\text{Theor. Output (kg)} = \frac{\text{Moles of Starting Material (Sr. 1)} \times \text{Product MW (g/mol)}}{1000}$$
-* **Percentage Molar Yield (% Molar)**:
-  $$\% \text{ Molar Yield} = \left(\frac{\text{Actual Isolated Moles}}{\text{Theoretical Moles}}\right) \times 100 = \left(\frac{\frac{\text{Actual Output (kg)} \times 1000}{\text{Product MW}}}{\text{Moles of Sr. 1}}\right) \times 100$$
-* **Percentage Mass Yield (% w/w)**:
-  $$\% \text{ w/w Yield} = \left(\frac{\text{Actual Isolated Output (kg)}}{\text{Starting Material Mass (kg)}}\right) \times 100$$
+A dedicated browser-based process chemistry and cost-contribution engine for Process R&D, Tech Transfer, and Chemical Plant Operations.
 
 ---
 
-### 2. Stage Mass Balance & Process Mass Intensity (PMI)
-* **Total Stage Mass In (kg)**: Sum of all solids (kg) and solvents ($\text{Volume (L)} \times \text{Density (g/mL)}$) charged.
-* **Recovered Solvents (kg)**: Total solvent mass reclaimed via distillation.
-* **Process Mass Intensity (PMI)**:
-  $$\text{Stage PMI} = \frac{\text{Total Mass In (kg)}}{\text{Actual Product Isolated (kg)}}$$
-  $$\text{Cumulative Global PMI} = \frac{\text{Total Raw Materials Charged across All Stages (kg)}}{\text{Final Finished API Output (kg)}}$$
+## 📋 Excel Price Master Upload Template
+
+To auto-fill prices, CAS numbers, molecular weights, and densities, prepare an Excel file (`.xlsx`) or `.csv` with these headers:
+
+| Name of Raw Material | CAS No | Molecular Weight | Density | Rate/Kg |
+| :--- | :--- | :--- | :--- | :--- |
+| Benzaldehyde | 100-52-7 | 106.12 | 1.044 | 350.00 |
+| Acetone | 67-64-1 | 58.08 | 0.784 | 85.00 |
+| Sodium Hydroxide | 1310-73-2 | 40.00 | 2.130 | 65.00 |
+| Toluene | 108-88-3 | 92.14 | 0.867 | 95.00 |
 
 ---
 
-## ⚡ Key Workflow Features
+## ⚗️ Stoichiometry & Calculation Engine
 
-1. **Auto-Cascading**: Actual output quantity and molecular weight of Stage $N$ automatically populate as the starting substrate of Stage $N+1$.
-2. **PubChem Auto-Lookup**: Search CAS, MW, and solvent densities with real-time online resolution.
-3. **Green Chemistry Badges**: Stage molar yields are color-coded:
-   * **Green**: $\ge 85\%$
-   * **Yellow**: $70\% - 84.9\%$
-   * **Red**: $< 70\%$
-4. **Excel Export**: Produces comprehensive engineering reports including mass balance parameters, PMI, and stage-wise costs.
+### 1. Reference Material (Sr. No. 1)
+* Sr. No. 1 is the reference substrate ($\text{Mole Ratio} = 1.00$).
+* $\text{Moles} = \frac{\text{Mass (kg)} \times 1000}{\text{MW (g/mol)}}$
+
+### 2. Automated Stoichiometry (Sr. No. 2+)
+* **Mole Ratio Mode (Molar Equivalents)**:
+  $$\text{Required Moles} = \text{Moles of Sr. 1} \times \text{Mole Ratio}$$
+  $$\text{Quantity (kg)} = \frac{\text{Required Moles} \times \text{MW}}{1000}$$
+* **Volume Ratio Mode ($V/W$ in L/kg of Reference Material)**:
+  $$\text{Quantity (L)} = \text{Mass of Sr. 1 (kg)} \times \text{Volume Ratio}$$
+  $$\text{Equivalent Mass (kg)} = \text{Quantity (L)} \times \text{Density (g/mL)}$$
+
+### 3. Stage-wise Cost Subtotals
+* **Stage RM Cost (w/o Rec.)**: $\sum \text{Cost (w/o Rec.) of all materials in that stage}$
+* **Stage RM Cost (with Rec.)**: $\sum \text{Cost (with Rec.) of all materials in that stage}$
+* **Stage Cost Contribution**: $\frac{\text{Stage Cost (with Rec.)}}{\text{Grand Total API Cost (with Rec.)}} \times 100$
 
 ---
 
 ## 🌐 Deploy to GitHub Pages
 
-1. Push all files to a GitHub repository (`pharma-api-rmc`).
-2. Go to **Repository Settings > Pages**.
-3. Select **Branch: `main`** and **Folder: `/(root)`**.
-4. Click **Save** to make the app live.
+1. Push these updated files (`index.html`, `style.css`, `app.js`, `README.md`) to your GitHub repository.
+2. The GitHub Pages deployment will trigger automatically.
+3. Access your updated live app at: `https://<your-username>.github.io/<repo-name>/`
