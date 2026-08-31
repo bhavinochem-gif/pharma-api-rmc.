@@ -1,38 +1,45 @@
-# pharma-api-rmc.
-# Raw Material Costing (RMC) Sheet for Pharma API
+# Pharma API Raw Material Costing (RMC), Mass Balance & Yield Calculator
 
-A lightweight, high-precision client-side application built for Process Chemistry, Chemical R&D, and API Operations to compute Stage-wise Raw Material Costs (RMC), solvent recovery economics, and percentage contributions.
-
-## 🚀 Key Features
-
-- **Multi-Stage Synthesis Support**: Add unlimited stages (e.g., Stage-1, Stage-2, Crude, Purification).
-- **Automated Stoichiometry & Costing**:
-  - $Moles = \frac{Qty\,(kg) \times 1000}{Molecular\,Weight\,(g/mol)}$
-  - $Qty\,/\,kg\,API = \frac{Batch\,RM\,Qty}{Finished\,API\,Batch\,Size}$
-  - $Qty\,/\,kg\,API\,(with\,recovery) = Qty\,/\,kg\,API \times \left(1 - \frac{Recovery\%}{100}\right)$
-  - Stage-wise and overall % cost contributions calculated in real-time.
-- **Master Sheet Auto-Lookup**: Upload an Excel price master sheet to auto-populate SAP Code, CAS No, MW, and Price.
-- **Export Ready**: Download formatted Excel reports directly from the browser.
+A browser-based stoichiometry, solvent recovery, and process mass balance tool built for Pharmaceutical Process R&D, Pilot Plant, and Commercial Chemical Manufacturing.
 
 ---
 
-## 📊 Excel Master Sheet Format
+## 🧪 Mass Balance & Yield Equations
 
-To use the upload feature, format your Excel file (`.xlsx`) with the following headers:
-
-| SAP Code | CAS No     | Name of Raw Material | Molecular Weight | Rate/Kg |
-| :------- | :--------- | :------------------- | :--------------- | :------ |
-| RM-10101 | 67-64-1    | Acetone              | 58.08            | 85.00   |
-| RM-20412 | 108-88-3   | Toluene              | 92.14            | 95.00   |
-| RM-30041 | 224311-51-7| Key Intermediate KSM | 412.50           | 4500.00 |
+### 1. Theoretical vs. Actual Yield
+* **Theoretical Output (kg)**:
+  $$\text{Theor. Output (kg)} = \frac{\text{Moles of Starting Material (Sr. 1)} \times \text{Product MW (g/mol)}}{1000}$$
+* **Percentage Molar Yield (% Molar)**:
+  $$\% \text{ Molar Yield} = \left(\frac{\text{Actual Isolated Moles}}{\text{Theoretical Moles}}\right) \times 100 = \left(\frac{\frac{\text{Actual Output (kg)} \times 1000}{\text{Product MW}}}{\text{Moles of Sr. 1}}\right) \times 100$$
+* **Percentage Mass Yield (% w/w)**:
+  $$\% \text{ w/w Yield} = \left(\frac{\text{Actual Isolated Output (kg)}}{\text{Starting Material Mass (kg)}}\right) \times 100$$
 
 ---
 
-## 🌐 Deploying to GitHub Pages
+### 2. Stage Mass Balance & Process Mass Intensity (PMI)
+* **Total Stage Mass In (kg)**: Sum of all solids (kg) and solvents ($\text{Volume (L)} \times \text{Density (g/mL)}$) charged.
+* **Recovered Solvents (kg)**: Total solvent mass reclaimed via distillation.
+* **Process Mass Intensity (PMI)**:
+  $$\text{Stage PMI} = \frac{\text{Total Mass In (kg)}}{\text{Actual Product Isolated (kg)}}$$
+  $$\text{Cumulative Global PMI} = \frac{\text{Total Raw Materials Charged across All Stages (kg)}}{\text{Final Finished API Output (kg)}}$$
 
-1. Create a new repository on GitHub: `pharma-api-rmc`.
-2. Commit and push `index.html`, `style.css`, `app.js`, and `README.md`.
-3. Go to **Settings** > **Pages**.
-4. Under **Branch**, select `main` (or `master`) and folder `/ (root)`.
-5. Click **Save**. Your RMC web application will be live at:
-   `https://<your-username>.github.io/pharma-api-rmc/`
+---
+
+## ⚡ Key Workflow Features
+
+1. **Auto-Cascading**: Actual output quantity and molecular weight of Stage $N$ automatically populate as the starting substrate of Stage $N+1$.
+2. **PubChem Auto-Lookup**: Search CAS, MW, and solvent densities with real-time online resolution.
+3. **Green Chemistry Badges**: Stage molar yields are color-coded:
+   * **Green**: $\ge 85\%$
+   * **Yellow**: $70\% - 84.9\%$
+   * **Red**: $< 70\%$
+4. **Excel Export**: Produces comprehensive engineering reports including mass balance parameters, PMI, and stage-wise costs.
+
+---
+
+## 🌐 Deploy to GitHub Pages
+
+1. Push all files to a GitHub repository (`pharma-api-rmc`).
+2. Go to **Repository Settings > Pages**.
+3. Select **Branch: `main`** and **Folder: `/(root)`**.
+4. Click **Save** to make the app live.
