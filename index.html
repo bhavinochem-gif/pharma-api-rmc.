@@ -4,13 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pharma API - RMC, Mass Balance & Yield Engine</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS CDN for Excel Upload/Export -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
+  <!-- Header Navigation -->
   <header class="bg-indigo-950 text-white shadow-lg sticky top-0 z-50">
     <div class="max-w-full px-6 py-3 flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center space-x-3">
@@ -28,21 +32,25 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
+        <!-- Re-upload / Open existing project file -->
         <label class="bg-indigo-800 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center cursor-pointer shadow transition border border-indigo-600">
           <i data-lucide="folder-open" class="w-4 h-4 mr-1.5 text-teal-300"></i> Open Saved Project (.xlsx)
           <input type="file" id="projectFileInput" accept=".xlsx, .xls" class="hidden" />
         </label>
 
+        <!-- Live Local Disk Background Auto-Sync -->
         <button id="btnLinkLocalFile" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow transition border border-slate-600">
           <i data-lucide="hard-drive-download" class="w-4 h-4 mr-1.5 text-amber-400"></i>
           <span id="syncBtnLabel">Link Local Disk Auto-Save (5s)</span>
         </button>
 
+        <!-- Export Excel -->
         <button id="btnExport" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow transition">
           <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export RMC Sheet
         </button>
 
-        <button id="btnResetProject" class="bg-rose-900/60 hover:bg-rose-800 text-rose-200 px-2.5 py-2 rounded-lg text-xs font-semibold flex items-center transition" title="Reset all data">
+        <!-- Reset Project -->
+        <button id="btnResetProject" class="bg-rose-900/70 hover:bg-rose-800 text-rose-100 px-2.5 py-2 rounded-lg text-xs font-semibold flex items-center transition" title="Clear all data and start fresh">
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
         </button>
       </div>
@@ -51,6 +59,7 @@
 
   <main class="max-w-full px-6 py-6 space-y-6">
 
+    <!-- Meta Configuration Card -->
     <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center">
         <i data-lucide="settings" class="w-5 h-5 mr-2 text-indigo-600"></i> Project & Final API Parameters
@@ -80,10 +89,13 @@
       </div>
     </section>
 
+    <!-- Global Auto-Complete Datalist -->
     <datalist id="rmMasterList"></datalist>
 
+    <!-- Reaction Stages Container -->
     <div id="stagesContainer" class="space-y-6"></div>
 
+    <!-- Overall Summary Dashboard -->
     <section class="bg-white rounded-xl shadow-md border border-slate-200 p-6 overflow-hidden">
       <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center">
         <i data-lucide="pie-chart" class="w-5 h-5 mr-2 text-indigo-600"></i> Overall API Cumulative Cost Summary
