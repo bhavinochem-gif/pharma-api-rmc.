@@ -1,8 +1,11 @@
 // State Management
 let priceMaster = {};
 let stageCount = 0;
+let isRestoringState = false;
+let localFileHandle = null;
+
 const STORAGE_KEY = "PHARMA_RMC_AUTOSAVE_STATE";
-let localFileHandle = null; // File System Access API Handle
+const PRICE_MASTER_STORAGE_KEY = "PHARMA_RMC_PRICE_MASTER";
 
 // Common Solvent Densities (g/mL)
 const SOLVENT_DENSITIES = {
@@ -44,17 +47,20 @@ function refreshIcons() {
   if (window.lucide) lucide.createIcons();
 }
 
-// Startup Initialization
+// -------------------------------------------------------------
+// 1. Startup & Event Listeners
+// -------------------------------------------------------------
+
 document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
+  loadPriceMasterFromCache();
 
-  // Try to restore from localStorage, otherwise create Stage 1
-  const restored = loadStateFromLocalStorage();
+  const restored = loadProjectFromLocalStorage();
   if (!restored) {
     addNewStage("Stage-1: Key Intermediate Synthesis");
   }
 
-  // Start 5-Second Background Timer
+  // 5-second background sync
   setInterval(handleFiveSecondAutoSave, 5000);
   refreshIcons();
 });
@@ -62,55 +68,224 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupEventListeners() {
   document.getElementById("btnAddStage").addEventListener("click", () => {
     addNewStage(`Stage-${stageCount + 1}`);
-    triggerAutoSave();
-  });
-
-  document.getElementById("projectName").addEventListener("input", triggerAutoSave);
-  document.getElementById("apiBatchSize").addEventListener("input", () => {
     recalculateAll();
-    triggerAutoSave();
+    saveStateToLocalStorage();
   });
 
   document.getElementById("priceMasterFile").addEventListener("change", handleExcelPriceMasterUpload);
   document.getElementById("projectFileInput").addEventListener("change", handleProjectExcelUpload);
-  document.getElementById("btnExport").addEventListener("click", () => exportToExcel(false));
+  document.getElementById("btnExport").addEventListener("click", exportToExcel);
   document.getElementById("btnLinkLocalFile").addEventListener("click", linkLocalDiskFile);
   document.getElementById("btnResetProject").addEventListener("click", resetProject);
+
+  // GLOBAL INPUT & CHANGE DELEGATION
+  // Captures every keystroke across project inputs and dynamic stage tables
+  document.addEventListener("input", (e) => {
+    if (isRestoringState) return;
+    if (e.target.matches("input, select, textarea")) {
+      if (e.target.classList.contains("rm-name")) {
+        autoFillRM(e.target);
+      }
+      recalculateAll();
+      saveStateToLocalStorage();
+    }
+  });
+
+  document.addEventListener("change", (e) => {
+    if (isRestoringState) return;
+    if (e.target.matches("input, select, textarea")) {
+      if (e.target.classList.contains("rm-name")) {
+        autoFillRM(e.target);
+      }
+      recalculateAll();
+      saveStateToLocalStorage();
+    }
+  });
 }
 
 // -------------------------------------------------------------
-// 1. Serialization & State Persistence (Browser Cache & Export)
+// 2. Normalized Excel Price Master Parser & Autocomplete
+// -------------------------------------------------------------
+
+function cleanHeader(headerStr) {
+  if (!headerStr) return "";
+  return String(headerStr).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function extractCellValue(row, variations) {
+  const rowKeys = Object.keys(row);
+  for (const variant of variations) {
+    const matchedKey = rowKeys.find(k => cleanHeader(k) === cleanHeader(variant));
+    if (matchedKey && row[matchedKey] !== undefined && row[matchedKey] !== null) {
+      return row[matchedKey];
+    }
+  }
+  return "";
+}
+
+function parseNumericValue(val) {
+  if (typeof val === "number") return val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/[^0-9.-]/g, "");
+  return parseFloat(cleaned) || 0;
+}
+
+function handleExcelPriceMasterUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (evt) {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      if (!jsonData || jsonData.length === 0) {
+        alert("The uploaded Excel sheet is empty.");
+        return;
+      }
+
+      priceMaster = {};
+
+      jsonData.forEach((row) => {
+        const name = String(extractCellValue(row, [
+          "Name of Raw Material", "Raw Material Name", "Raw Material", "Material Name", 
+          "Material", "RM Name", "RM", "Item Name", "Item", "Description", "Name"
+        ])).trim();
+
+        const cas = String(extractCellValue(row, [
+          "CAS No", "CAS No.", "CAS Number", "CAS", "CAS Reg No"
+        ])).trim();
+
+        const mw = parseNumericValue(extractCellValue(row, [
+          "Molecular Weight", "Mol Weight", "Mol Wt", "MW", "Mol. Wt."
+        ]));
+
+        const density = parseNumericValue(extractCellValue(row, [
+          "Density", "Sp Gravity", "Specific Gravity", "Density (g/mL)"
+        ]));
+
+        const rate = parseNumericValue(extractCellValue(row, [
+          "Rate/Kg", "Rate / Kg", "Rate/kg", "Rate", "Price/Kg", "Price", "Cost/Kg", "Cost", "Price/kg"
+        ]));
+
+        if (name) {
+          priceMaster[name.toLowerCase()] = {
+            name: name,
+            cas: cas,
+            mw: mw,
+            density: density > 0 ? density : 0,
+            rate: rate
+          };
+        }
+      });
+
+      // Save to persistent storage and populate datalist
+      localStorage.setItem(PRICE_MASTER_STORAGE_KEY, JSON.stringify(priceMaster));
+      renderDatalist();
+
+      const totalItems = Object.keys(priceMaster).length;
+      document.getElementById("uploadLabel").innerText = `Loaded (${totalItems} items)`;
+      alert(`Successfully loaded ${totalItems} raw materials into price master.`);
+
+      // Re-run matching on all existing rows
+      document.querySelectorAll(".rm-name").forEach((input) => autoFillRM(input));
+      recalculateAll();
+      saveStateToLocalStorage();
+    } catch (err) {
+      console.error("Failed to parse Excel Price Master:", err);
+      alert("Failed to parse Excel file. Please verify column headers.");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadPriceMasterFromCache() {
+  try {
+    const raw = localStorage.getItem(PRICE_MASTER_STORAGE_KEY);
+    if (raw) {
+      priceMaster = JSON.parse(raw);
+      renderDatalist();
+      const count = Object.keys(priceMaster).length;
+      if (count > 0) {
+        document.getElementById("uploadLabel").innerText = `Loaded (${count} items)`;
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load price master from cache:", e);
+  }
+}
+
+function renderDatalist() {
+  const dataList = document.getElementById("rmMasterList");
+  dataList.innerHTML = "";
+
+  Object.values(priceMaster).forEach((item) => {
+    const opt = document.createElement("option");
+    opt.value = item.name;
+    opt.label = `Rate: ₹${item.rate}/kg ${item.cas ? '| CAS: ' + item.cas : ''}`;
+    dataList.appendChild(opt);
+  });
+}
+
+function autoFillRM(input) {
+  const row = input.closest("tr");
+  if (!row) return;
+
+  const rawVal = input.value.trim();
+  const lowerVal = rawVal.toLowerCase();
+
+  // 1. Direct Match in Price Master
+  if (priceMaster[lowerVal]) {
+    const item = priceMaster[lowerVal];
+    if (item.cas) row.querySelector(".cas-no").value = item.cas;
+    if (item.mw > 0) row.querySelector(".mw").value = item.mw;
+    if (item.density > 0) row.querySelector(".density").value = item.density;
+    if (item.rate > 0) row.querySelector(".rate").value = item.rate;
+  }
+
+  // 2. Solvent Density Preset Check
+  if (SOLVENT_DENSITIES[lowerVal]) {
+    row.querySelector(".density").value = SOLVENT_DENSITIES[lowerVal];
+    row.querySelector(".ratio-type").value = "volume";
+    row.querySelector(".unit-select").value = "L";
+  }
+}
+
+// -------------------------------------------------------------
+// 3. Persistent Local Storage (Full Page Refresh Safety)
 // -------------------------------------------------------------
 
 function getSerializedProjectState() {
   const state = {
     projectName: document.getElementById("projectName").value || "",
     apiBatchSize: parseFloat(document.getElementById("apiBatchSize").value) || 100,
-    priceMaster: priceMaster,
     stages: []
   };
 
   document.querySelectorAll(".stage-card").forEach((stageCard) => {
     const stageObj = {
-      stageName: stageCard.querySelector(".stage-name-input").value,
-      prodName: stageCard.querySelector(".stage-prod-name").value,
-      prodMw: stageCard.querySelector(".stage-prod-mw").value,
-      actualQty: stageCard.querySelector(".stage-actual-qty").value,
+      stageName: stageCard.querySelector(".stage-name-input").value || "",
+      prodName: stageCard.querySelector(".stage-prod-name").value || "",
+      prodMw: stageCard.querySelector(".stage-prod-mw").value || "0",
+      actualQty: stageCard.querySelector(".stage-actual-qty").value || "0",
       materials: []
     };
 
     stageCard.querySelectorAll("tbody tr").forEach((row) => {
       stageObj.materials.push({
-        cas: row.querySelector(".cas-no").value,
-        name: row.querySelector(".rm-name").value,
-        density: row.querySelector(".density").value,
-        ratioType: row.querySelector(".ratio-type").value,
-        ratioVal: row.querySelector(".mole-vol-ratio").value,
-        qty: row.querySelector(".qty").value,
-        unit: row.querySelector(".unit-select").value,
-        mw: row.querySelector(".mw").value,
-        recPercent: row.querySelector(".rec-percent").value,
-        rate: row.querySelector(".rate").value
+        cas: row.querySelector(".cas-no").value || "",
+        name: row.querySelector(".rm-name").value || "",
+        density: row.querySelector(".density").value || "1.0",
+        ratioType: row.querySelector(".ratio-type").value || "mole",
+        ratioVal: row.querySelector(".mole-vol-ratio").value || "1.00",
+        qty: row.querySelector(".qty").value || "0",
+        unit: row.querySelector(".unit-select").value || "kg",
+        mw: row.querySelector(".mw").value || "0",
+        recPercent: row.querySelector(".rec-percent").value || "0",
+        rate: row.querySelector(".rate").value || "0"
       });
     });
 
@@ -120,12 +295,42 @@ function getSerializedProjectState() {
   return state;
 }
 
+function saveStateToLocalStorage() {
+  if (isRestoringState) return;
+  try {
+    const state = getSerializedProjectState();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+    const indicator = document.getElementById("autoSaveIndicator");
+    if (indicator) {
+      const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      indicator.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i> Auto-saved at ${timeStr}`;
+      refreshIcons();
+    }
+  } catch (err) {
+    console.error("LocalStorage save failed:", err);
+  }
+}
+
+function loadProjectFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const state = JSON.parse(raw);
+    return applyProjectState(state);
+  } catch (err) {
+    console.error("Failed to restore from LocalStorage:", err);
+    return false;
+  }
+}
+
 function applyProjectState(state) {
   if (!state || !state.stages || state.stages.length === 0) return false;
 
+  isRestoringState = true;
+
   document.getElementById("projectName").value = state.projectName || "";
   document.getElementById("apiBatchSize").value = state.apiBatchSize || 100;
-  if (state.priceMaster) priceMaster = state.priceMaster;
 
   const container = document.getElementById("stagesContainer");
   container.innerHTML = "";
@@ -141,7 +346,7 @@ function applyProjectState(state) {
     stageCard.innerHTML = getStageTemplateHTML(stageId, stageData.stageName);
     container.appendChild(stageCard);
 
-    stageCard.querySelector(".stage-prod-name").value = stageData.prodName || "Intermediate Output";
+    stageCard.querySelector(".stage-prod-name").value = stageData.prodName || "";
     stageCard.querySelector(".stage-prod-mw").value = stageData.prodMw || "0";
     stageCard.querySelector(".stage-actual-qty").value = stageData.actualQty || "0";
 
@@ -168,53 +373,27 @@ function applyProjectState(state) {
     });
   });
 
-  updateStageNumbersAndCascade();
+  isRestoringState = false;
+  updateStageNumbersAndCascade(true); // Preserve restored values
   recalculateAll();
   refreshIcons();
   return true;
 }
 
-// LocalStorage Handlers
-function triggerAutoSave() {
-  const state = getSerializedProjectState();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  const indicator = document.getElementById("autoSaveIndicator");
-  if (indicator) {
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    indicator.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i> Auto-saved at ${timeStr}`;
-    refreshIcons();
-  }
-}
-
-function loadStateFromLocalStorage() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const state = JSON.parse(raw);
-      return applyProjectState(state);
-    }
-  } catch (err) {
-    console.error("Failed to parse localStorage:", err);
-  }
-  return false;
-}
-
 function resetProject() {
-  if (confirm("Reset current RMC project? Unsaved changes will be cleared.")) {
+  if (confirm("Reset current project? Unsaved changes will be cleared.")) {
     localStorage.removeItem(STORAGE_KEY);
     location.reload();
   }
 }
 
 // -------------------------------------------------------------
-// 2. 5-Second Background Auto-Save & File System Access Sync
+// 4. Background 5-Second Local Disk Auto-Save & Sync
 // -------------------------------------------------------------
 
 async function handleFiveSecondAutoSave() {
-  // 1. Always save to LocalStorage
-  triggerAutoSave();
+  saveStateToLocalStorage();
 
-  // 2. If a local computer file is linked, write to disk silently
   if (localFileHandle) {
     try {
       const state = getSerializedProjectState();
@@ -225,116 +404,40 @@ async function handleFiveSecondAutoSave() {
       await writable.write(arrayBuffer);
       await writable.close();
 
-      const btnLabel = document.getElementById("syncBtnLabel");
-      btnLabel.innerText = `Disk Synced (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`;
+      const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      document.getElementById("syncBtnLabel").innerText = `Disk Synced (${timeStr})`;
     } catch (err) {
-      console.warn("Background disk write failed or permission revoked:", err);
+      console.warn("Silent local disk write error:", err);
     }
   }
 }
 
 async function linkLocalDiskFile() {
   if (!window.showSaveFilePicker) {
-    alert("Your browser does not support the File System Access API. Background auto-save to browser storage is active.");
+    alert("File System Access is not supported in this browser. Browser cache auto-save is active.");
     return;
   }
 
   try {
     const projectName = (document.getElementById("projectName").value || "Pharma_API_RMC").replace(/\s+/g, "_");
     localFileHandle = await window.showSaveFilePicker({
-      suggestedName: `${projectName}_LiveSync.xlsx`,
+      suggestedName: `${projectName}_AutoSaved.xlsx`,
       types: [{
         description: "Excel Spreadsheet",
         accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] }
       }]
     });
 
-    document.getElementById("syncBtnLabel").innerText = "Linked: Auto-saving every 5s";
+    document.getElementById("syncBtnLabel").innerText = "Linked: Saving every 5s";
     document.getElementById("btnLinkLocalFile").classList.replace("bg-slate-800", "bg-emerald-800");
-    handleFiveSecondAutoSave(); // Trigger initial write
+    handleFiveSecondAutoSave();
   } catch (err) {
-    console.log("User cancelled file selection or permission was denied.");
+    console.log("File link cancelled by user.");
   }
 }
 
 // -------------------------------------------------------------
-// 3. Upload and Re-fill Saved Project File (.xlsx)
-// -------------------------------------------------------------
-
-function handleProjectExcelUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function (evt) {
-    try {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-
-      // Look for embedded project metadata sheet
-      if (workbook.SheetNames.includes("__RMC_PROJECT_DATA__")) {
-        const metaSheet = workbook.Sheets["__RMC_PROJECT_DATA__"];
-        const rawJson = XLSX.utils.sheet_to_json(metaSheet);
-        if (rawJson && rawJson[0] && rawJson[0].projectStateJson) {
-          const state = JSON.parse(rawJson[0].projectStateJson);
-          applyProjectState(state);
-          alert(`Successfully imported and restored project: "${state.projectName || 'Unnamed'}"`);
-          return;
-        }
-      }
-
-      alert("The uploaded Excel file does not contain embedded RMC project state. Please upload a sheet previously generated by this app.");
-    } catch (err) {
-      console.error("Error importing project file:", err);
-      alert("Failed to read project state from Excel. Ensure it is a valid file.");
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-// -------------------------------------------------------------
-// 4. Raw Material Price Master Parser (No SAP Code)
-// -------------------------------------------------------------
-
-function handleExcelPriceMasterUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function (evt) {
-    const data = new Uint8Array(evt.target.result);
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(sheet);
-
-    const dataList = document.getElementById("rmMasterList");
-    dataList.innerHTML = "";
-    priceMaster = {};
-
-    jsonData.forEach((row) => {
-      const name = (row["Name of Raw Material"] || row["Name"] || row["RM Name"] || row["Material"] || "").toString().trim();
-      const cas = (row["CAS No"] || row["CAS No."] || row["CAS"] || "").toString().trim();
-      const mw = parseFloat(row["Molecular Weight"] || row["MW"] || 0);
-      const density = parseFloat(row["Density"] || 0);
-      const rate = parseFloat(row["Rate/Kg"] || row["Rate"] || row["Price"] || 0);
-
-      if (name) {
-        priceMaster[name.toLowerCase()] = { name, cas, mw, density, rate };
-        const option = document.createElement("option");
-        option.value = name;
-        dataList.appendChild(option);
-      }
-    });
-
-    document.getElementById("uploadLabel").innerText = `Loaded (${jsonData.length} items)`;
-    triggerAutoSave();
-    alert(`Loaded ${jsonData.length} Raw Materials from Excel.`);
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-// -------------------------------------------------------------
-// 5. Stage & Material Row Templates
+// 5. Stage & Material HTML Generation
 // -------------------------------------------------------------
 
 function getStageTemplateHTML(stageId, stageTitle) {
@@ -389,6 +492,7 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </table>
     </div>
 
+    <!-- Stage Subtotal Summary Strip -->
     <div class="bg-slate-100/90 px-4 py-2.5 border-t border-b border-slate-200 flex flex-wrap justify-between items-center text-xs">
       <span class="font-bold text-slate-700 uppercase tracking-wide flex items-center">
         <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1 text-indigo-600"></i> Stage Cost Subtotals
@@ -411,6 +515,7 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </div>
     </div>
 
+    <!-- Yield & Mass Balance Control Panel -->
     <div class="bg-slate-50/80 p-4 space-y-3">
       <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
         <div class="md:col-span-2">
@@ -420,7 +525,7 @@ function getStageTemplateHTML(stageId, stageTitle) {
         <div>
           <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Product MW (g/mol)</label>
           <div class="flex items-center space-x-1">
-            <input type="number" step="any" class="stage-prod-mw w-full border rounded px-2 py-1 text-xs font-semibold text-slate-700 bg-white text-right" value="0" oninput="recalculateAll(); triggerAutoSave();" />
+            <input type="number" step="any" class="stage-prod-mw w-full border rounded px-2 py-1 text-xs font-semibold text-slate-700 bg-white text-right" value="0" />
             <button type="button" title="Auto-fetch Product MW online" onclick="fetchProductMWOnline(this)" class="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-600">
               <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
             </button>
@@ -428,7 +533,7 @@ function getStageTemplateHTML(stageId, stageTitle) {
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Actual Output (kg)</label>
-          <input type="number" step="any" class="stage-actual-qty w-full border rounded px-2 py-1 text-xs font-bold text-indigo-700 bg-white text-right" value="80.00" oninput="recalculateAll(); triggerAutoSave();" />
+          <input type="number" step="any" class="stage-actual-qty w-full border rounded px-2 py-1 text-xs font-bold text-indigo-700 bg-white text-right" value="80.00" />
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase mb-0.5">Theor. Output (kg)</label>
@@ -460,7 +565,7 @@ function getStageTemplateHTML(stageId, stageTitle) {
 function getMaterialRowHTML(isFirstRow, rowCount) {
   return `
     <td class="text-center font-bold text-slate-500 sr-no">${rowCount}</td>
-    <td><input type="text" class="cas-no w-24" placeholder="CAS No." oninput="triggerAutoSave()" /></td>
+    <td><input type="text" class="cas-no w-24" placeholder="CAS No." /></td>
     <td>
       <div class="flex items-center space-x-1">
         <input 
@@ -468,8 +573,6 @@ function getMaterialRowHTML(isFirstRow, rowCount) {
           list="rmMasterList" 
           class="rm-name w-40 font-medium" 
           placeholder="Select/Enter RM" 
-          onchange="autoFillRM(this)" 
-          oninput="triggerAutoSave()"
         />
         <button 
           type="button" 
@@ -481,9 +584,9 @@ function getMaterialRowHTML(isFirstRow, rowCount) {
         </button>
       </div>
     </td>
-    <td><input type="number" step="any" class="density w-16 text-right" value="1.0" oninput="recalculateAll(); triggerAutoSave();" /></td>
+    <td><input type="number" step="any" class="density w-16 text-right" value="1.0" /></td>
     <td>
-      <select class="ratio-type text-xs" onchange="recalculateAll(); triggerAutoSave();">
+      <select class="ratio-type text-xs">
         <option value="mole">Mole Ratio</option>
         <option value="volume">Vol Ratio (V/W)</option>
       </select>
@@ -495,7 +598,6 @@ function getMaterialRowHTML(isFirstRow, rowCount) {
         class="mole-vol-ratio w-16 text-right ${isFirstRow ? 'bg-slate-100 font-bold text-slate-600' : ''}" 
         value="1.00" 
         ${isFirstRow ? 'readonly title="Fixed at 1.00 (Reference Substrate)"' : ''} 
-        oninput="recalculateAll(); triggerAutoSave();" 
       />
     </td>
     <td>
@@ -504,22 +606,21 @@ function getMaterialRowHTML(isFirstRow, rowCount) {
         step="any" 
         class="qty w-20 text-right font-medium ${!isFirstRow ? 'calc-highlight' : ''}" 
         value="${isFirstRow ? '100' : '0'}" 
-        oninput="recalculateAll(); triggerAutoSave();" 
       />
     </td>
     <td>
-      <select class="unit-select text-xs font-semibold" onchange="recalculateAll(); triggerAutoSave();">
+      <select class="unit-select text-xs font-semibold">
         <option value="kg" selected>Kg</option>
         <option value="L">L</option>
         <option value="g">g</option>
       </select>
     </td>
-    <td><input type="number" step="any" class="mw w-16 text-right" value="0" oninput="recalculateAll(); triggerAutoSave();" /></td>
+    <td><input type="number" step="any" class="mw w-16 text-right" value="0" /></td>
     <td class="read-only-cell moles">0.00</td>
     <td class="read-only-cell qty-per-kg">0.0000</td>
-    <td><input type="number" step="any" class="rec-percent w-14 text-right" value="0" min="0" max="100" oninput="recalculateAll(); triggerAutoSave();" /></td>
+    <td><input type="number" step="any" class="rec-percent w-14 text-right" value="0" min="0" max="100" /></td>
     <td class="read-only-cell qty-per-kg-rec">0.0000</td>
-    <td><input type="number" step="any" class="rate w-16 text-right font-medium" value="0" oninput="recalculateAll(); triggerAutoSave();" /></td>
+    <td><input type="number" step="any" class="rate w-16 text-right font-medium" value="0" /></td>
     <td class="read-only-cell cost-wo-rec">0.00</td>
     <td class="read-only-cell cost-w-rec">0.00</td>
     <td class="read-only-cell cont-wo-rec">0.00%</td>
@@ -543,7 +644,7 @@ function addNewStage(defaultStageName) {
   container.appendChild(stageCard);
 
   addMaterialRow(stageId);
-  updateStageNumbersAndCascade();
+  updateStageNumbersAndCascade(false);
   refreshIcons();
 }
 
@@ -551,9 +652,9 @@ function removeStage(stageId) {
   const stage = document.getElementById(stageId);
   if (stage) {
     stage.remove();
-    updateStageNumbersAndCascade();
+    updateStageNumbersAndCascade(false);
     recalculateAll();
-    triggerAutoSave();
+    saveStateToLocalStorage();
   }
 }
 
@@ -565,9 +666,7 @@ function addMaterialRow(stageId) {
   row.innerHTML = getMaterialRowHTML(rowCount === 1, rowCount);
   tbody.appendChild(row);
 
-  updateStageNumbersAndCascade();
-  recalculateAll();
-  triggerAutoSave();
+  updateStageNumbersAndCascade(false);
   refreshIcons();
 }
 
@@ -580,78 +679,48 @@ function removeRow(btn) {
     td.innerText = index + 1;
   });
   recalculateAll();
-  triggerAutoSave();
+  saveStateToLocalStorage();
 }
 
-// Stage numbering and automatic previous intermediate cascade
-function updateStageNumbersAndCascade() {
+function updateStageNumbersAndCascade(preserveExisting = false) {
   const stageCards = document.querySelectorAll(".stage-card");
   stageCards.forEach((card, index) => {
     const stageNum = index + 1;
     card.querySelector(".stage-badge").innerText = `Stage ${stageNum}`;
 
     const firstRow = card.querySelector("tbody tr:first-child");
-    if (firstRow) {
+    if (firstRow && index > 0 && !preserveExisting) {
       const rmInput = firstRow.querySelector(".rm-name");
       const mwInput = firstRow.querySelector(".mw");
       const qtyInput = firstRow.querySelector(".qty");
 
-      if (index === 0) {
-        if (rmInput.dataset.autolinked === "true") {
-          rmInput.value = "";
-          rmInput.dataset.autolinked = "false";
-          rmInput.readOnly = false;
-        }
-      } else {
-        const prevCard = stageCards[index - 1];
-        const prevProdName = prevCard.querySelector(".stage-prod-name").value.trim() || `Intermediate Stage-${index}`;
-        const prevProdMW = parseFloat(prevCard.querySelector(".stage-prod-mw").value) || 0;
-        const prevActualQty = parseFloat(prevCard.querySelector(".stage-actual-qty").value) || 0;
+      const prevCard = stageCards[index - 1];
+      const prevProdName = prevCard.querySelector(".stage-prod-name").value.trim() || `Intermediate Stage-${index}`;
+      const prevProdMW = parseFloat(prevCard.querySelector(".stage-prod-mw").value) || 0;
+      const prevActualQty = parseFloat(prevCard.querySelector(".stage-actual-qty").value) || 0;
 
-        rmInput.value = prevProdName;
-        rmInput.dataset.autolinked = "true";
-        if (prevProdMW > 0) mwInput.value = prevProdMW;
-        if (prevActualQty > 0) qtyInput.value = prevActualQty;
-      }
+      rmInput.value = prevProdName;
+      if (prevProdMW > 0 && parseFloat(mwInput.value) === 0) mwInput.value = prevProdMW;
+      if (prevActualQty > 0 && parseFloat(qtyInput.value) === 0) qtyInput.value = prevActualQty;
     }
   });
 }
 
 function handleStageNameChange() {
-  updateStageNumbersAndCascade();
+  updateStageNumbersAndCascade(false);
   recalculateAll();
-  triggerAutoSave();
+  saveStateToLocalStorage();
 }
 
-// Auto-fill RM from local Excel Master
-function autoFillRM(input) {
-  const row = input.closest("tr");
-  const val = input.value.trim().toLowerCase();
+// -------------------------------------------------------------
+// 6. Online PubChem API Fetching
+// -------------------------------------------------------------
 
-  if (priceMaster[val]) {
-    const item = priceMaster[val];
-    row.querySelector(".cas-no").value = item.cas || "";
-    row.querySelector(".mw").value = item.mw || 0;
-    if (item.density > 0) row.querySelector(".density").value = item.density;
-    row.querySelector(".rate").value = item.rate || 0;
-  }
-
-  if (SOLVENT_DENSITIES[val]) {
-    row.querySelector(".density").value = SOLVENT_DENSITIES[val];
-    row.querySelector(".ratio-type").value = "volume";
-    row.querySelector(".unit-select").value = "L";
-  }
-
-  recalculateAll();
-  triggerAutoSave();
-}
-
-// Auto Fetch Product MW online via PubChem
 async function fetchProductMWOnline(btn) {
   const card = btn.closest(".stage-card");
   const prodName = card.querySelector(".stage-prod-name").value.trim();
   if (!prodName) {
-    alert("Please enter product/intermediate name first.");
+    alert("Please enter intermediate product name.");
     return;
   }
 
@@ -660,28 +729,27 @@ async function fetchProductMWOnline(btn) {
   refreshIcons();
 
   try {
-    const encodedName = encodeURIComponent(prodName);
-    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/property/MolecularWeight/JSON`);
+    const encoded = encodeURIComponent(prodName);
+    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encoded}/property/MolecularWeight/JSON`);
     if (propRes.ok) {
       const propData = await propRes.json();
       const mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
       if (mw > 0) {
         card.querySelector(".stage-prod-mw").value = parseFloat(mw).toFixed(2);
         recalculateAll();
-        triggerAutoSave();
+        saveStateToLocalStorage();
       }
     } else {
       alert(`No online record found for "${prodName}".`);
     }
   } catch (err) {
-    console.error("PubChem Error:", err);
+    console.error(err);
   } finally {
     btn.innerHTML = originalIcon;
     refreshIcons();
   }
 }
 
-// Auto Fetch CAS, MW and Density online via PubChem REST API
 async function fetchOnlineChemData(btn, inputElement) {
   const row = inputElement.closest("tr");
   const rmName = inputElement.value.trim();
@@ -696,9 +764,10 @@ async function fetchOnlineChemData(btn, inputElement) {
   refreshIcons();
 
   try {
-    const encodedName = encodeURIComponent(rmName);
+    const encoded = encodeURIComponent(rmName);
 
-    const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/synonyms/JSON`);
+    // 1. Synonyms for CAS
+    const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encoded}/synonyms/JSON`);
     let casNo = "";
     if (synRes.ok) {
       const synData = await synRes.json();
@@ -708,14 +777,15 @@ async function fetchOnlineChemData(btn, inputElement) {
       if (match) casNo = match.trim();
     }
 
-    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/property/MolecularWeight/JSON`);
+    // 2. Molecular Weight
+    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encoded}/property/MolecularWeight/JSON`);
     let mw = 0;
     if (propRes.ok) {
       const propData = await propRes.json();
       mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
     }
 
-    let density = SOLVENT_DENSITIES[rmName.toLowerCase()] || 0;
+    const density = SOLVENT_DENSITIES[rmName.toLowerCase()] || 0;
 
     if (casNo) row.querySelector(".cas-no").value = casNo;
     if (mw > 0) row.querySelector(".mw").value = parseFloat(mw).toFixed(2);
@@ -729,11 +799,11 @@ async function fetchOnlineChemData(btn, inputElement) {
       alert(`No online record found for "${rmName}". Enter details manually.`);
     } else {
       recalculateAll();
-      triggerAutoSave();
+      saveStateToLocalStorage();
     }
   } catch (err) {
     console.error("PubChem API Error:", err);
-    alert("Failed to fetch online details. Please enter manually.");
+    alert("Failed to fetch online details. Check internet connection.");
   } finally {
     btn.innerHTML = originalIcon;
     refreshIcons();
@@ -741,7 +811,7 @@ async function fetchOnlineChemData(btn, inputElement) {
 }
 
 // -------------------------------------------------------------
-// 6. Master Calculation Engine
+// 7. Master Stoichiometry, Yield & Cost Engine
 // -------------------------------------------------------------
 
 function recalculateAll() {
@@ -756,7 +826,7 @@ function recalculateAll() {
     const rows = Array.from(stageCard.querySelectorAll("tbody tr"));
     if (rows.length === 0) return;
 
-    // 1. Process Reference Material (Sr. No. 1)
+    // Process Reference Material (Sr. No. 1)
     const refRow = rows[0];
     const refQtyInput = parseFloat(refRow.querySelector(".qty").value) || 0;
     const refUnit = refRow.querySelector(".unit-select").value;
@@ -776,7 +846,7 @@ function recalculateAll() {
     let stageSubtotalWoRec = 0;
     let stageSubtotalWRec = 0;
 
-    // 2. Compute Sr. No. 2 onwards based on selected Ratio Type
+    // Process Rows
     rows.forEach((row, index) => {
       const isFirst = index === 0;
       const unit = row.querySelector(".unit-select").value;
@@ -789,7 +859,7 @@ function recalculateAll() {
 
       let qty = parseFloat(row.querySelector(".qty").value) || 0;
 
-      if (!isFirst) {
+      if (!isFirst && !isRestoringState) {
         if (ratioType === "mole") {
           const targetMoles = refMoles * ratioVal;
           const targetMassKg = mw > 0 ? (targetMoles * mw) / 1000 : 0;
@@ -839,7 +909,7 @@ function recalculateAll() {
     stageCard.querySelector(".stage-subtotal-wo-rec").innerText = `₹ ${stageSubtotalWoRec.toFixed(2)}`;
     stageCard.querySelector(".stage-subtotal-w-rec").innerText = `₹ ${stageSubtotalWRec.toFixed(2)}`;
 
-    // 3. Stage Yield & Mass Balance
+    // Yield & Mass Balance
     const prodMW = parseFloat(stageCard.querySelector(".stage-prod-mw").value) || 0;
     const actualOutKg = parseFloat(stageCard.querySelector(".stage-actual-qty").value) || 0;
 
@@ -863,7 +933,7 @@ function recalculateAll() {
     stageCard.querySelector(".stage-pmi").innerText = stagePMI.toFixed(2);
   });
 
-  // 4. Cost Contributions
+  // Stage & Row Percentage Contributions
   stageCards.forEach((stageCard) => {
     let stageCostWithRecSum = 0;
     stageCard.querySelectorAll("tbody tr").forEach((row) => {
@@ -882,7 +952,7 @@ function recalculateAll() {
     stageCard.querySelector(".stage-subtotal-cont-rec").innerText = `${stageContPct.toFixed(2)}%`;
   });
 
-  // 5. Global Dashboard
+  // Overall Totals
   const totalSavings = grandTotalCostWithoutRec - grandTotalCostWithRec;
   const savingsPct = grandTotalCostWithoutRec > 0 ? (totalSavings / grandTotalCostWithoutRec) * 100 : 0;
   const cumulativePMI = apiBatchSize > 0 ? globalTotalInputMassKg / apiBatchSize : 0;
@@ -895,7 +965,7 @@ function recalculateAll() {
 }
 
 // -------------------------------------------------------------
-// 7. Excel Workbook Generator (Embedded Metadata for Re-import)
+// 8. Excel Import/Export Handling
 // -------------------------------------------------------------
 
 function buildWorkbookFromState(state) {
@@ -916,10 +986,10 @@ function buildWorkbookFromState(state) {
 
     exportData.push({ "Stage / Material": `=== ${stageName.toUpperCase()} ===` });
     exportData.push({
-      "Stage / Material": `Product: ${prodName} \vert{} MW:${prodMw} g/mol | Actual Out: ${actualKg} kg \vert{} Theor Out:${theorKg} | % Molar Yield: ${molarYield} \vert{} \% w/w:${wwYield}`
+      "Stage / Material": `Product: ${prodName} | MW: ${prodMw} g/mol | Actual Out: ${actualKg} kg | Theor Out: ${theorKg} | % Molar Yield: ${molarYield} | % w/w: ${wwYield}`
     });
     exportData.push({
-      "Stage / Material": `STAGE SUBTOTAL: Cost w/o Rec: ${stageCostWo} | Cost with Rec: ${stageCostW} \vert{} Stage Contribution:${stageCont}`
+      "Stage / Material": `STAGE SUBTOTAL: Cost w/o Rec: ${stageCostWo} | Cost with Rec: ${stageCostW} | Stage Contribution: ${stageCont}`
     });
 
     const rows = stageCard.querySelectorAll("tbody tr");
@@ -950,7 +1020,7 @@ function buildWorkbookFromState(state) {
   const ws = XLSX.utils.json_to_sheet(exportData);
   XLSX.utils.book_append_sheet(wb, ws, "RMC_Report");
 
-  // Embed structured project state sheet for instant re-upload & full restoration
+  // Metadata sheet for re-uploading and editing
   const metaSheet = XLSX.utils.json_to_sheet([{ projectStateJson: JSON.stringify(state) }]);
   XLSX.utils.book_append_sheet(wb, metaSheet, "__RMC_PROJECT_DATA__");
 
@@ -962,4 +1032,35 @@ function exportToExcel() {
   const projectName = (state.projectName || "Pharma_API_RMC").replace(/\s+/g, "_");
   const wb = buildWorkbookFromState(state);
   XLSX.writeFile(wb, `${projectName}_RMC_Costing.xlsx`);
+}
+
+function handleProjectExcelUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (evt) {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+
+      if (workbook.SheetNames.includes("__RMC_PROJECT_DATA__")) {
+        const metaSheet = workbook.Sheets["__RMC_PROJECT_DATA__"];
+        const rawJson = XLSX.utils.sheet_to_json(metaSheet);
+        if (rawJson && rawJson[0] && rawJson[0].projectStateJson) {
+          const state = JSON.parse(rawJson[0].projectStateJson);
+          applyProjectState(state);
+          saveStateToLocalStorage();
+          alert(`Successfully imported project: "${state.projectName || 'Unnamed'}"`);
+          return;
+        }
+      }
+
+      alert("Uploaded file does not contain embedded RMC project state. Please upload an Excel sheet generated by this application.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to load project file.");
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
