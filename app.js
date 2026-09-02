@@ -7,40 +7,127 @@ let localFileHandle = null;
 const STORAGE_KEY = "PHARMA_RMC_AUTOSAVE_STATE";
 const PRICE_MASTER_STORAGE_KEY = "PHARMA_RMC_PRICE_MASTER";
 
-// Common Solvent Densities (g/mL)
-const SOLVENT_DENSITIES = {
-  "water": 1.000,
-  "methanol": 0.792,
-  "ethanol": 0.789,
-  "isopropanol": 0.786,
-  "ipa": 0.786,
-  "acetone": 0.784,
-  "dichloromethane": 1.326,
-  "dcm": 1.326,
-  "mdc": 1.326,
-  "toluene": 0.867,
-  "ethyl acetate": 0.902,
-  "ea": 0.902,
-  "etac": 0.902,
-  "tetrahydrofuran": 0.886,
-  "thf": 0.886,
-  "acetonitrile": 0.786,
-  "acn": 0.786,
-  "n,n-dimethylformamide": 0.944,
-  "dmf": 0.944,
-  "dimethyl sulfoxide": 1.100,
-  "dmso": 1.100,
-  "hexane": 0.655,
-  "n-hexane": 0.655,
-  "heptane": 0.684,
-  "n-heptane": 0.684,
-  "pyridine": 0.982,
-  "triethylamine": 0.726,
-  "tea": 0.726,
-  "acetic acid": 1.049,
-  "diethyl ether": 0.713,
-  "ether": 0.713,
-  "chloroform": 1.489
+// -------------------------------------------------------------
+// Comprehensive Process Chemistry & Reagents Knowledgebase
+// (Instant resolution for catalysts, alkoxides, organometallics & solvents)
+// -------------------------------------------------------------
+const INTERNAL_CHEMICAL_DB = {
+  // Catalysts & Supported Metals
+  "palladium on alumina": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
+  "pd/al2o3": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
+  "palladium on carbon": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
+  "pd/c": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
+  "palladium on charcoal": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
+  "platinum on carbon": { cas: "7440-06-4", mw: 195.08, density: 1.0, isLiquid: false },
+  "pt/c": { cas: "7440-06-4", mw: 195.08, density: 1.0, isLiquid: false },
+  "raney nickel": { cas: "7440-02-0", mw: 58.69, density: 1.0, isLiquid: false },
+  "raney ni": { cas: "7440-02-0", mw: 58.69, density: 1.0, isLiquid: false },
+  "palladium acetate": { cas: "3375-31-3", mw: 224.51, density: 1.0, isLiquid: false },
+  "pd(oac)2": { cas: "3375-31-3", mw: 224.51, density: 1.0, isLiquid: false },
+  "tetrakis(triphenylphosphine)palladium": { cas: "14221-01-3", mw: 1155.56, density: 1.0, isLiquid: false },
+  "pd(pph3)4": { cas: "14221-01-3", mw: 1155.56, density: 1.0, isLiquid: false },
+  "pd(dppf)cl2": { cas: "72287-26-4", mw: 731.70, density: 1.0, isLiquid: false },
+  "pd(pph3)2cl2": { cas: "13965-03-2", mw: 701.90, density: 1.0, isLiquid: false },
+
+  // Metal Alkoxides, Halides & Lewis Acids
+  "titanium tetraisopropoxide": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
+  "titanium isopropoxide": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
+  "tetraisopropyl titanate": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
+  "ttip": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
+  "titanium tetrachloride": { cas: "7550-45-0", mw: 189.68, density: 1.726, isLiquid: true },
+  "ticl4": { cas: "7550-45-0", mw: 189.68, density: 1.726, isLiquid: true },
+  "aluminium chloride": { cas: "7446-70-0", mw: 133.34, density: 2.44, isLiquid: false },
+  "alcl3": { cas: "7446-70-0", mw: 133.34, density: 2.44, isLiquid: false },
+  "boron tribromide": { cas: "10294-33-4", mw: 250.52, density: 2.65, isLiquid: true },
+  "bbr3": { cas: "10294-33-4", mw: 250.52, density: 2.65, isLiquid: true },
+  "boron trifluoride etherate": { cas: "109-63-7", mw: 141.93, density: 1.125, isLiquid: true },
+  "bf3.oet2": { cas: "109-63-7", mw: 141.93, density: 1.125, isLiquid: true },
+  "copper(i) iodide": { cas: "7681-65-4", mw: 190.45, density: 5.62, isLiquid: false },
+  "cui": { cas: "7681-65-4", mw: 190.45, density: 5.62, isLiquid: false },
+
+  // Organometallics & Strong Bases
+  "sodium hydride": { cas: "7646-69-7", mw: 24.00, density: 1.20, isLiquid: false },
+  "nah": { cas: "7646-69-7", mw: 24.00, density: 1.20, isLiquid: false },
+  "n-butyllithium": { cas: "109-72-8", mw: 64.06, density: 0.680, isLiquid: true },
+  "nbuli": { cas: "109-72-8", mw: 64.06, density: 0.680, isLiquid: true },
+  "buli": { cas: "109-72-8", mw: 64.06, density: 0.680, isLiquid: true },
+  "diisobutylaluminium hydride": { cas: "1191-15-7", mw: 142.22, density: 0.790, isLiquid: true },
+  "dibal-h": { cas: "1191-15-7", mw: 142.22, density: 0.790, isLiquid: true },
+  "dibal": { cas: "1191-15-7", mw: 142.22, density: 0.790, isLiquid: true },
+  "lithium diisopropylamide": { cas: "4111-54-0", mw: 107.12, density: 0.790, isLiquid: true },
+  "lda": { cas: "4111-54-0", mw: 107.12, density: 0.790, isLiquid: true },
+  "potassium tert-butoxide": { cas: "865-47-4", mw: 112.21, density: 1.0, isLiquid: false },
+  "kotbu": { cas: "865-47-4", mw: 112.21, density: 1.0, isLiquid: false },
+  "sodium tert-butoxide": { cas: "865-48-5", mw: 96.10, density: 1.0, isLiquid: false },
+  "naotbu": { cas: "865-48-5", mw: 96.10, density: 1.0, isLiquid: false },
+  "sodium methoxide": { cas: "124-41-4", mw: 54.02, density: 1.0, isLiquid: false },
+  "naome": { cas: "124-41-4", mw: 54.02, density: 1.0, isLiquid: false },
+  "sodium ethoxide": { cas: "141-52-6", mw: 68.05, density: 1.0, isLiquid: false },
+  "naoet": { cas: "141-52-6", mw: 68.05, density: 1.0, isLiquid: false },
+
+  // Reagents, Halogenating & Coupling Agents
+  "thionyl chloride": { cas: "7719-09-7", mw: 118.97, density: 1.638, isLiquid: true },
+  "socl2": { cas: "7719-09-7", mw: 118.97, density: 1.638, isLiquid: true },
+  "oxalyl chloride": { cas: "79-37-8", mw: 126.93, density: 1.480, isLiquid: true },
+  "phosphorus oxychloride": { cas: "10025-87-3", mw: 153.33, density: 1.645, isLiquid: true },
+  "pocl3": { cas: "10025-87-3", mw: 153.33, density: 1.645, isLiquid: true },
+  "methanesulfonyl chloride": { cas: "124-63-0", mw: 114.55, density: 1.480, isLiquid: true },
+  "mscl": { cas: "124-63-0", mw: 114.55, density: 1.480, isLiquid: true },
+  "p-toluenesulfonyl chloride": { cas: "98-59-9", mw: 190.65, density: 1.0, isLiquid: false },
+  "tscl": { cas: "98-59-9", mw: 190.65, density: 1.0, isLiquid: false },
+  "1,1'-carbonyldiimidazole": { cas: "530-62-1", mw: 162.15, density: 1.0, isLiquid: false },
+  "cdi": { cas: "530-62-1", mw: 162.15, density: 1.0, isLiquid: false },
+  "edc hcl": { cas: "25952-53-8", mw: 191.70, density: 1.0, isLiquid: false },
+  "edc.hcl": { cas: "25952-53-8", mw: 191.70, density: 1.0, isLiquid: false },
+  "dcc": { cas: "538-75-0", mw: 206.33, density: 1.0, isLiquid: false },
+  "hobt": { cas: "2592-95-2", mw: 135.12, density: 1.0, isLiquid: false },
+  "triethylamine": { cas: "121-44-8", mw: 101.19, density: 0.726, isLiquid: true },
+  "tea": { cas: "121-44-8", mw: 101.19, density: 0.726, isLiquid: true },
+  "diisopropylethylamine": { cas: "7087-68-5", mw: 129.24, density: 0.755, isLiquid: true },
+  "dipea": { cas: "7087-68-5", mw: 129.24, density: 0.755, isLiquid: true },
+  "hunig's base": { cas: "7087-68-5", mw: 129.24, density: 0.755, isLiquid: true },
+  "4-dimethylaminopyridine": { cas: "1122-58-3", mw: 122.17, density: 1.0, isLiquid: false },
+  "dmap": { cas: "1122-58-3", mw: 122.17, density: 1.0, isLiquid: false },
+  "n-bromosuccinimide": { cas: "128-08-5", mw: 177.98, density: 1.0, isLiquid: false },
+  "nbs": { cas: "128-08-5", mw: 177.98, density: 1.0, isLiquid: false },
+  "sodium borohydride": { cas: "16940-66-2", mw: 37.83, density: 1.0, isLiquid: false },
+  "nabh4": { cas: "16940-66-2", mw: 37.83, density: 1.0, isLiquid: false },
+  "lithium aluminium hydride": { cas: "16853-85-3", mw: 37.95, density: 1.0, isLiquid: false },
+  "lah": { cas: "16853-85-3", mw: 37.95, density: 1.0, isLiquid: false },
+
+  // Solvents & Liquid Acids
+  "water": { cas: "7732-18-5", mw: 18.02, density: 1.000, isLiquid: true },
+  "methanol": { cas: "67-56-1", mw: 32.04, density: 0.792, isLiquid: true },
+  "ethanol": { cas: "64-17-5", mw: 46.07, density: 0.789, isLiquid: true },
+  "isopropanol": { cas: "67-63-0", mw: 60.10, density: 0.786, isLiquid: true },
+  "ipa": { cas: "67-63-0", mw: 60.10, density: 0.786, isLiquid: true },
+  "acetone": { cas: "67-64-1", mw: 58.08, density: 0.784, isLiquid: true },
+  "dichloromethane": { cas: "75-09-2", mw: 84.93, density: 1.326, isLiquid: true },
+  "dcm": { cas: "75-09-2", mw: 84.93, density: 1.326, isLiquid: true },
+  "mdc": { cas: "75-09-2", mw: 84.93, density: 1.326, isLiquid: true },
+  "toluene": { cas: "108-88-3", mw: 92.14, density: 0.867, isLiquid: true },
+  "ethyl acetate": { cas: "141-78-6", mw: 88.11, density: 0.902, isLiquid: true },
+  "ea": { cas: "141-78-6", mw: 88.11, density: 0.902, isLiquid: true },
+  "etac": { cas: "141-78-6", mw: 88.11, density: 0.902, isLiquid: true },
+  "tetrahydrofuran": { cas: "109-99-9", mw: 72.11, density: 0.886, isLiquid: true },
+  "thf": { cas: "109-99-9", mw: 72.11, density: 0.886, isLiquid: true },
+  "acetonitrile": { cas: "75-05-8", mw: 41.05, density: 0.786, isLiquid: true },
+  "acn": { cas: "75-05-8", mw: 41.05, density: 0.786, isLiquid: true },
+  "n,n-dimethylformamide": { cas: "68-12-2", mw: 73.09, density: 0.944, isLiquid: true },
+  "dmf": { cas: "68-12-2", mw: 73.09, density: 0.944, isLiquid: true },
+  "dimethyl sulfoxide": { cas: "67-68-5", mw: 78.13, density: 1.100, isLiquid: true },
+  "dmso": { cas: "67-68-5", mw: 78.13, density: 1.100, isLiquid: true },
+  "hexane": { cas: "110-54-3", mw: 86.18, density: 0.655, isLiquid: true },
+  "n-hexane": { cas: "110-54-3", mw: 86.18, density: 0.655, isLiquid: true },
+  "heptane": { cas: "142-82-5", mw: 100.20, density: 0.684, isLiquid: true },
+  "n-heptane": { cas: "142-82-5", mw: 100.20, density: 0.684, isLiquid: true },
+  "pyridine": { cas: "110-86-1", mw: 79.10, density: 0.982, isLiquid: true },
+  "acetic acid": { cas: "64-19-7", mw: 60.05, density: 1.049, isLiquid: true },
+  "trifluoroacetic acid": { cas: "76-05-1", mw: 114.02, density: 1.489, isLiquid: true },
+  "tfa": { cas: "76-05-1", mw: 114.02, density: 1.489, isLiquid: true },
+  "diethyl ether": { cas: "60-29-7", mw: 74.12, density: 0.713, isLiquid: true },
+  "ether": { cas: "60-29-7", mw: 74.12, density: 0.713, isLiquid: true },
+  "chloroform": { cas: "67-66-3", mw: 119.38, density: 1.489, isLiquid: true }
 };
 
 function refreshIcons() {
@@ -50,7 +137,6 @@ function refreshIcons() {
 // -------------------------------------------------------------
 // 1. Startup & Event Listeners
 // -------------------------------------------------------------
-
 document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   loadPriceMasterFromCache();
@@ -78,8 +164,7 @@ function setupEventListeners() {
   document.getElementById("btnLinkLocalFile").addEventListener("click", linkLocalDiskFile);
   document.getElementById("btnResetProject").addEventListener("click", resetProject);
 
-  // GLOBAL INPUT & CHANGE DELEGATION
-  // Captures every keystroke across project inputs and dynamic stage tables
+  // Global Event Delegation: Capture inputs across all dynamic tables
   document.addEventListener("input", (e) => {
     if (isRestoringState) return;
     if (e.target.matches("input, select, textarea")) {
@@ -104,9 +189,242 @@ function setupEventListeners() {
 }
 
 // -------------------------------------------------------------
-// 2. Normalized Excel Price Master Parser & Autocomplete
+// 2. Intelligent Chemical Name Normalizer
 // -------------------------------------------------------------
+function normalizeChemicalQuery(raw) {
+  if (!raw) return "";
+  let s = String(raw).trim();
 
+  // Strip percentages (e.g., "5% palladium", "10% wt", "60% in mineral oil")
+  s = s.replace(/^\s*\d+(\.\d+)?\s*%\s*(w\/w|v\/v|wt)?\s*/i, "");
+  s = s.replace(/\s*\d+(\.\d+)?\s*%\s*(w\/w|v\/v|wt)?/gi, "");
+  // Strip molarities (e.g., "2.5 M in hexanes")
+  s = s.replace(/\s*\d+(\.\d+)?\s*M\s*(in\s+[a-z0-9]+)?/gi, "");
+
+  // Strip physical states, formulations, and purity descriptors
+  s = s.replace(/\b(dry powder|wet powder|powder|dry basis|wet basis|floc|flakes|pellets|beads|granules|slurry|dispersion in mineral oil|in mineral oil|in oil|reagent grade|tech grade|technical grade|extra pure|pure|anhydrous|concentrated|conc\.|conc|aqueous|aq\.|aq)\b/gi, "");
+
+  // Remove excess parentheses, commas, and whitespace
+  s = s.replace(/[(),]/g, " ").replace(/\s+/g, " ").trim();
+  return s;
+}
+
+// -------------------------------------------------------------
+// 3. Multi-Tier Online Chemical Resolver
+// -------------------------------------------------------------
+async function fetchOnlineChemData(btn, inputElement) {
+  const row = inputElement.closest("tr");
+  const rawName = inputElement.value.trim();
+
+  if (!rawName) {
+    alert("Please enter a Raw Material name first.");
+    return;
+  }
+
+  const cleanName = normalizeChemicalQuery(rawName);
+  const originalIcon = btn.innerHTML;
+  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
+  refreshIcons();
+
+  let foundCAS = "";
+  let foundMW = 0;
+  let foundDensity = 0;
+
+  try {
+    // TIER 1: Check In-App Knowledgebase (Direct or Cleaned)
+    const dbKeyRaw = rawName.toLowerCase();
+    const dbKeyClean = cleanName.toLowerCase();
+    const matchedDB = INTERNAL_CHEMICAL_DB[dbKeyClean] || INTERNAL_CHEMICAL_DB[dbKeyRaw];
+
+    if (matchedDB) {
+      foundCAS = matchedDB.cas || "";
+      foundMW = matchedDB.mw || 0;
+      foundDensity = matchedDB.density || 0;
+    }
+
+    // TIER 2: Query PubChem if fields remain incomplete
+    if (!foundCAS || foundMW === 0 || foundDensity === 0) {
+      let cid = null;
+      const searchTerms = [cleanName, rawName];
+
+      for (const term of searchTerms) {
+        if (!term || cid) continue;
+        try {
+          const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(term)}/cids/JSON`);
+          if (cidRes.ok) {
+            const cidData = await cidRes.json();
+            cid = cidData?.IdentifierList?.CID?.[0] || null;
+          }
+        } catch (e) {}
+      }
+
+      // If direct CID lookup fails, query PubChem Autocomplete
+      if (!cid) {
+        try {
+          const autoRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(cleanName)}/json?limit=1`);
+          if (autoRes.ok) {
+            const autoData = await autoRes.json();
+            const candidate = autoData?.dictionary_terms?.compound?.[0];
+            if (candidate) {
+              const cidRes2 = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(candidate)}/cids/JSON`);
+              if (cidRes2.ok) {
+                const cidData2 = await cidRes2.json();
+                cid = cidData2?.IdentifierList?.CID?.[0] || null;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Query Properties, Synonyms, and PUG View from CID
+      if (cid) {
+        // Molecular Weight
+        if (foundMW === 0) {
+          try {
+            const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularWeight/JSON`);
+            if (propRes.ok) {
+              const propData = await propRes.json();
+              foundMW = parseFloat(propData?.PropertyTable?.Properties?.[0]?.MolecularWeight) || 0;
+            }
+          } catch (e) {}
+        }
+
+        // CAS Number via Synonyms
+        if (!foundCAS) {
+          try {
+            const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`);
+            if (synRes.ok) {
+              const synData = await synRes.json();
+              const synonyms = synData?.InformationList?.Information?.[0]?.Synonym || [];
+              const casRegex = /^[1-9]\d{1,6}-\d{2}-\d$/;
+              const match = synonyms.find((item) => casRegex.test(item.trim()));
+              if (match) foundCAS = match.trim();
+            }
+          } catch (e) {}
+        }
+
+        // Experimental Density via PubChem PUG View
+        if (foundDensity === 0) {
+          foundDensity = await fetchDensityFromPubChemPUGView(cid);
+        }
+      }
+    }
+
+    // TIER 3: NCI CIR (Cactus) Fallback
+    if (!foundCAS || foundMW === 0) {
+      try {
+        if (!foundCAS) {
+          const cactusCas = await fetch(`https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(cleanName)}/cas`);
+          if (cactusCas.ok) {
+            const txt = (await cactusCas.text()).trim();
+            if (/^[1-9]\d{1,6}-\d{2}-\d$/.test(txt)) foundCAS = txt;
+          }
+        }
+        if (foundMW === 0) {
+          const cactusMW = await fetch(`https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(cleanName)}/mw`);
+          if (cactusMW.ok) {
+            const val = parseFloat(await cactusMW.text());
+            if (val > 0) foundMW = val;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Apply Retrieved Values to Row
+    let appliedCount = 0;
+    if (foundCAS) {
+      row.querySelector(".cas-no").value = foundCAS;
+      appliedCount++;
+    }
+    if (foundMW > 0) {
+      row.querySelector(".mw").value = foundMW.toFixed(2);
+      appliedCount++;
+    }
+    if (foundDensity > 0) {
+      row.querySelector(".density").value = foundDensity.toFixed(3);
+      appliedCount++;
+      // Auto-set volume ratio and liters for liquid reagents
+      if (foundDensity !== 1.0) {
+        row.querySelector(".ratio-type").value = "volume";
+        row.querySelector(".unit-select").value = "L";
+      }
+    } else {
+      // Solid / supported catalyst fallback
+      if (row.querySelector(".density").value === "" || parseFloat(row.querySelector(".density").value) === 0) {
+        row.querySelector(".density").value = "1.0";
+      }
+    }
+
+    if (appliedCount > 0) {
+      recalculateAll();
+      saveStateToLocalStorage();
+    } else {
+      alert(`Could not resolve data for "${rawName}". Please enter manually.`);
+    }
+
+  } catch (err) {
+    console.error("Chemical Resolver Error:", err);
+    alert("Online resolver lookup failed. Please enter details manually.");
+  } finally {
+    btn.innerHTML = originalIcon;
+    refreshIcons();
+  }
+}
+
+// PubChem PUG View Crawler for Experimental Density
+async function fetchDensityFromPubChemPUGView(cid) {
+  try {
+    const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON?heading=Density`;
+    const res = await fetch(url);
+    if (!res.ok) return 0;
+    const json = await res.json();
+
+    let densityStr = null;
+    function walkTree(node) {
+      if (!node) return;
+      if (node.TOCHeading === "Density" && node.Information) {
+        for (const info of node.Information) {
+          if (info.Value?.StringWithMarkup?.[0]?.String) {
+            densityStr = info.Value.StringWithMarkup[0].String;
+            return;
+          }
+          if (typeof info.Value?.Number?.[0] === "number") {
+            densityStr = String(info.Value.Number[0]);
+            return;
+          }
+        }
+      }
+      if (node.Section && Array.isArray(node.Section)) {
+        for (const child of node.Section) {
+          walkTree(child);
+          if (densityStr) return;
+        }
+      }
+    }
+
+    if (json.Record?.Section) {
+      for (const rootSec of json.Record.Section) {
+        walkTree(rootSec);
+        if (densityStr) break;
+      }
+    }
+
+    if (densityStr) {
+      const match = densityStr.match(/([0-9]+\.[0-9]+|[0-9]+)/);
+      if (match) {
+        const val = parseFloat(match[1]);
+        if (val > 0.1 && val < 30) return val;
+      }
+    }
+  } catch (e) {
+    console.warn("PUG View parse error:", e);
+  }
+  return 0;
+}
+
+// -------------------------------------------------------------
+// 4. Excel Price Master Parser & Autocomplete
+// -------------------------------------------------------------
 function cleanHeader(headerStr) {
   if (!headerStr) return "";
   return String(headerStr).toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -143,7 +461,7 @@ function handleExcelPriceMasterUpload(e) {
       const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
       if (!jsonData || jsonData.length === 0) {
-        alert("The uploaded Excel sheet is empty.");
+        alert("Uploaded Excel sheet is empty.");
         return;
       }
 
@@ -151,7 +469,7 @@ function handleExcelPriceMasterUpload(e) {
 
       jsonData.forEach((row) => {
         const name = String(extractCellValue(row, [
-          "Name of Raw Material", "Raw Material Name", "Raw Material", "Material Name", 
+          "Name of Raw Material", "Raw Material Name", "Raw Material", "Material Name",
           "Material", "RM Name", "RM", "Item Name", "Item", "Description", "Name"
         ])).trim();
 
@@ -182,21 +500,19 @@ function handleExcelPriceMasterUpload(e) {
         }
       });
 
-      // Save to persistent storage and populate datalist
       localStorage.setItem(PRICE_MASTER_STORAGE_KEY, JSON.stringify(priceMaster));
       renderDatalist();
 
       const totalItems = Object.keys(priceMaster).length;
       document.getElementById("uploadLabel").innerText = `Loaded (${totalItems} items)`;
-      alert(`Successfully loaded ${totalItems} raw materials into price master.`);
+      alert(`Loaded ${totalItems} raw materials from price master.`);
 
-      // Re-run matching on all existing rows
       document.querySelectorAll(".rm-name").forEach((input) => autoFillRM(input));
       recalculateAll();
       saveStateToLocalStorage();
     } catch (err) {
       console.error("Failed to parse Excel Price Master:", err);
-      alert("Failed to parse Excel file. Please verify column headers.");
+      alert("Failed to parse file. Please verify column headers.");
     }
   };
   reader.readAsArrayBuffer(file);
@@ -214,7 +530,7 @@ function loadPriceMasterFromCache() {
       }
     }
   } catch (e) {
-    console.warn("Could not load price master from cache:", e);
+    console.warn("Could not load price master cache:", e);
   }
 }
 
@@ -236,28 +552,35 @@ function autoFillRM(input) {
 
   const rawVal = input.value.trim();
   const lowerVal = rawVal.toLowerCase();
+  const cleanVal = normalizeChemicalQuery(rawVal).toLowerCase();
 
-  // 1. Direct Match in Price Master
-  if (priceMaster[lowerVal]) {
-    const item = priceMaster[lowerVal];
+  // Match in uploaded Price Master
+  if (priceMaster[lowerVal] || priceMaster[cleanVal]) {
+    const item = priceMaster[lowerVal] || priceMaster[cleanVal];
     if (item.cas) row.querySelector(".cas-no").value = item.cas;
     if (item.mw > 0) row.querySelector(".mw").value = item.mw;
     if (item.density > 0) row.querySelector(".density").value = item.density;
     if (item.rate > 0) row.querySelector(".rate").value = item.rate;
   }
 
-  // 2. Solvent Density Preset Check
-  if (SOLVENT_DENSITIES[lowerVal]) {
-    row.querySelector(".density").value = SOLVENT_DENSITIES[lowerVal];
-    row.querySelector(".ratio-type").value = "volume";
-    row.querySelector(".unit-select").value = "L";
+  // Match in Internal Knowledgebase
+  const dbMatch = INTERNAL_CHEMICAL_DB[lowerVal] || INTERNAL_CHEMICAL_DB[cleanVal];
+  if (dbMatch) {
+    if (!row.querySelector(".cas-no").value && dbMatch.cas) row.querySelector(".cas-no").value = dbMatch.cas;
+    if (parseFloat(row.querySelector(".mw").value) === 0 && dbMatch.mw > 0) row.querySelector(".mw").value = dbMatch.mw;
+    if (dbMatch.density > 0) {
+      row.querySelector(".density").value = dbMatch.density;
+      if (dbMatch.isLiquid) {
+        row.querySelector(".ratio-type").value = "volume";
+        row.querySelector(".unit-select").value = "L";
+      }
+    }
   }
 }
 
 // -------------------------------------------------------------
-// 3. Persistent Local Storage (Full Page Refresh Safety)
+// 5. Persistent Local Storage (Full Page Refresh Safety)
 // -------------------------------------------------------------
-
 function getSerializedProjectState() {
   const state = {
     projectName: document.getElementById("projectName").value || "",
@@ -374,7 +697,7 @@ function applyProjectState(state) {
   });
 
   isRestoringState = false;
-  updateStageNumbersAndCascade(true); // Preserve restored values
+  updateStageNumbersAndCascade(true);
   recalculateAll();
   refreshIcons();
   return true;
@@ -388,9 +711,8 @@ function resetProject() {
 }
 
 // -------------------------------------------------------------
-// 4. Background 5-Second Local Disk Auto-Save & Sync
+// 6. Background 5-Second Local Disk Auto-Save & Sync
 // -------------------------------------------------------------
-
 async function handleFiveSecondAutoSave() {
   saveStateToLocalStorage();
 
@@ -407,14 +729,14 @@ async function handleFiveSecondAutoSave() {
       const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       document.getElementById("syncBtnLabel").innerText = `Disk Synced (${timeStr})`;
     } catch (err) {
-      console.warn("Silent local disk write error:", err);
+      console.warn("Background local disk sync warning:", err);
     }
   }
 }
 
 async function linkLocalDiskFile() {
   if (!window.showSaveFilePicker) {
-    alert("File System Access is not supported in this browser. Browser cache auto-save is active.");
+    alert("File System Access API is not supported in this browser. Browser cache auto-save remains fully active.");
     return;
   }
 
@@ -437,9 +759,8 @@ async function linkLocalDiskFile() {
 }
 
 // -------------------------------------------------------------
-// 5. Stage & Material HTML Generation
+// 7. Stage & Material HTML Template Generators
 // -------------------------------------------------------------
-
 function getStageTemplateHTML(stageId, stageTitle) {
   return `
     <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
@@ -712,10 +1033,6 @@ function handleStageNameChange() {
   saveStateToLocalStorage();
 }
 
-// -------------------------------------------------------------
-// 6. Online PubChem API Fetching
-// -------------------------------------------------------------
-
 async function fetchProductMWOnline(btn) {
   const card = btn.closest(".stage-card");
   const prodName = card.querySelector(".stage-prod-name").value.trim();
@@ -724,13 +1041,13 @@ async function fetchProductMWOnline(btn) {
     return;
   }
 
+  const cleanName = normalizeChemicalQuery(prodName);
   const originalIcon = btn.innerHTML;
   btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
   refreshIcons();
 
   try {
-    const encoded = encodeURIComponent(prodName);
-    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encoded}/property/MolecularWeight/JSON`);
+    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(cleanName)}/property/MolecularWeight/JSON`);
     if (propRes.ok) {
       const propData = await propRes.json();
       const mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
@@ -750,70 +1067,9 @@ async function fetchProductMWOnline(btn) {
   }
 }
 
-async function fetchOnlineChemData(btn, inputElement) {
-  const row = inputElement.closest("tr");
-  const rmName = inputElement.value.trim();
-
-  if (!rmName) {
-    alert("Please enter a Raw Material name first.");
-    return;
-  }
-
-  const originalIcon = btn.innerHTML;
-  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
-  refreshIcons();
-
-  try {
-    const encoded = encodeURIComponent(rmName);
-
-    // 1. Synonyms for CAS
-    const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encoded}/synonyms/JSON`);
-    let casNo = "";
-    if (synRes.ok) {
-      const synData = await synRes.json();
-      const synonyms = synData?.InformationList?.Information?.[0]?.Synonym || [];
-      const casRegex = /^[1-9]\d{1,6}-\d{2}-\d$/;
-      const match = synonyms.find((item) => casRegex.test(item.trim()));
-      if (match) casNo = match.trim();
-    }
-
-    // 2. Molecular Weight
-    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encoded}/property/MolecularWeight/JSON`);
-    let mw = 0;
-    if (propRes.ok) {
-      const propData = await propRes.json();
-      mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
-    }
-
-    const density = SOLVENT_DENSITIES[rmName.toLowerCase()] || 0;
-
-    if (casNo) row.querySelector(".cas-no").value = casNo;
-    if (mw > 0) row.querySelector(".mw").value = parseFloat(mw).toFixed(2);
-    if (density > 0) {
-      row.querySelector(".density").value = density;
-      row.querySelector(".ratio-type").value = "volume";
-      row.querySelector(".unit-select").value = "L";
-    }
-
-    if (!casNo && mw === 0 && density === 0) {
-      alert(`No online record found for "${rmName}". Enter details manually.`);
-    } else {
-      recalculateAll();
-      saveStateToLocalStorage();
-    }
-  } catch (err) {
-    console.error("PubChem API Error:", err);
-    alert("Failed to fetch online details. Check internet connection.");
-  } finally {
-    btn.innerHTML = originalIcon;
-    refreshIcons();
-  }
-}
-
 // -------------------------------------------------------------
-// 7. Master Stoichiometry, Yield & Cost Engine
+// 8. Master Stoichiometry, Yield & Cost Engine
 // -------------------------------------------------------------
-
 function recalculateAll() {
   const apiBatchSize = parseFloat(document.getElementById("apiBatchSize").value) || 1;
   const stageCards = document.querySelectorAll(".stage-card");
@@ -826,7 +1082,7 @@ function recalculateAll() {
     const rows = Array.from(stageCard.querySelectorAll("tbody tr"));
     if (rows.length === 0) return;
 
-    // Process Reference Material (Sr. No. 1)
+    // Reference Material (Sr. No. 1)
     const refRow = rows[0];
     const refQtyInput = parseFloat(refRow.querySelector(".qty").value) || 0;
     const refUnit = refRow.querySelector(".unit-select").value;
@@ -846,7 +1102,7 @@ function recalculateAll() {
     let stageSubtotalWoRec = 0;
     let stageSubtotalWRec = 0;
 
-    // Process Rows
+    // Rows
     rows.forEach((row, index) => {
       const isFirst = index === 0;
       const unit = row.querySelector(".unit-select").value;
@@ -933,7 +1189,7 @@ function recalculateAll() {
     stageCard.querySelector(".stage-pmi").innerText = stagePMI.toFixed(2);
   });
 
-  // Stage & Row Percentage Contributions
+  // Contributions
   stageCards.forEach((stageCard) => {
     let stageCostWithRecSum = 0;
     stageCard.querySelectorAll("tbody tr").forEach((row) => {
@@ -952,7 +1208,7 @@ function recalculateAll() {
     stageCard.querySelector(".stage-subtotal-cont-rec").innerText = `${stageContPct.toFixed(2)}%`;
   });
 
-  // Overall Totals
+  // Totals
   const totalSavings = grandTotalCostWithoutRec - grandTotalCostWithRec;
   const savingsPct = grandTotalCostWithoutRec > 0 ? (totalSavings / grandTotalCostWithoutRec) * 100 : 0;
   const cumulativePMI = apiBatchSize > 0 ? globalTotalInputMassKg / apiBatchSize : 0;
@@ -965,9 +1221,8 @@ function recalculateAll() {
 }
 
 // -------------------------------------------------------------
-// 8. Excel Import/Export Handling
+// 9. Excel Import/Export Handling
 // -------------------------------------------------------------
-
 function buildWorkbookFromState(state) {
   const wb = XLSX.utils.book_new();
   const exportData = [];
@@ -1020,7 +1275,6 @@ function buildWorkbookFromState(state) {
   const ws = XLSX.utils.json_to_sheet(exportData);
   XLSX.utils.book_append_sheet(wb, ws, "RMC_Report");
 
-  // Metadata sheet for re-uploading and editing
   const metaSheet = XLSX.utils.json_to_sheet([{ projectStateJson: JSON.stringify(state) }]);
   XLSX.utils.book_append_sheet(wb, metaSheet, "__RMC_PROJECT_DATA__");
 
