@@ -1,20 +1,12 @@
 # Pharma API Raw Material Costing (RMC) & Stoichiometry Engine
 
-A specialized, client-side process chemistry costing web application designed for Process Chemistry, Chemical R&D, and API Plant Operations.
-
----
-
-## 💾 Project Persistence & Background Auto-Save
-
-1. **Page Refresh Protection**: Every input keystroke is stored in browser cache (`localStorage`). Refreshing or closing your browser tab preserves all data.
-2. **5-Second Background Disk Sync**: Click **"Link Local Disk Auto-Save (5s)"** to select a target `.xlsx` file on your computer. The application will write and sync all calculations to your local disk silently every 5 seconds.
-3. **Re-Open & Update Existing Projects**: Every exported `.xlsx` file includes an embedded `__RMC_PROJECT_DATA__` state. Click **"Open Saved Project (.xlsx)"** to upload any previous file and resume editing.
+A dedicated browser-based process chemistry and cost-contribution engine for Process R&D, Tech Transfer, and Chemical Plant Operations.
 
 ---
 
 ## 📋 Excel Price Master Upload Template
 
-To auto-fill prices, CAS numbers, molecular weights, and densities, upload an Excel file (`.xlsx`) or `.csv` with these headers:
+The application accepts `.xlsx` or `.csv` files. Column headers are automatically normalized to tolerate arbitrary spaces, capitalization, and naming conventions:
 
 | Name of Raw Material | CAS No | Molecular Weight | Density | Rate/Kg |
 | :--- | :--- | :--- | :--- | :--- |
@@ -23,16 +15,25 @@ To auto-fill prices, CAS numbers, molecular weights, and densities, upload an Ex
 | Sodium Hydroxide | 1310-73-2 | 40.00 | 2.130 | 65.00 |
 | Toluene | 108-88-3 | 92.14 | 0.867 | 95.00 |
 
+*Supported Alternative Header Names:*
+* **Material Name**: `Name of Raw Material`, `Raw Material`, `RM Name`, `Material Description`, `Item Name`
+* **Price**: `Rate/Kg`, `Rate / Kg`, `Price`, `Rate`, `Price/Kg`, `Cost/Kg`
+* **Molecular Weight**: `Molecular Weight`, `Mol Weight`, `MW`, `Mol. Wt.`
+* **Density**: `Density`, `Specific Gravity`, `Sp Gravity`
+
 ---
 
-## ⚗️ Process Stoichiometry & Mass Balance Equations
+## 💾 Page Refresh & Auto-Save Features
 
-* **Sr. No. 1 Reference**: Fixed at Mole Ratio `1.00`.
-  $$\text{Moles} = \frac{\text{Mass (kg)} \times 1000}{\text{MW (g/mol)}}$$
-* **Sr. No. 2+ Stoichiometry**:
-  * *Mole Ratio*: $\text{Qty (kg)} = \frac{(\text{Ref Moles} \times \text{Mole Ratio}) \times \text{MW}}{1000}$
-  * *Volume Ratio ($V/W$)*: $\text{Qty (L)} = \text{Ref Mass (kg)} \times \text{Vol Ratio}$
-* **Theoretical Yield (kg)**:
-  $$\text{Theoretical Output} = \frac{\text{Moles of Sr. 1} \times \text{Product MW}}{1000}$$
-* **% Molar Yield**:
-  $$\% \text{ Molar Yield} = \left(\frac{\text{Actual Output (kg)} \times 1000 / \text{Product MW}}{\text{Moles of Sr. 1}}\right) \times 100$$
+1. **Global Storage Sync**: Every character typed into any field or table cell is immediately stored in your browser's persistent `localStorage`. Refreshing or accidentally closing the browser preserves your entire workspace.
+2. **Persistent Price Master**: Uploaded RM prices remain active and accessible across page refreshes.
+3. **5-Second Local Disk Sync**: Click **Link Local Disk Auto-Save (5s)** to automatically synchronize and write calculations directly to an `.xlsx` file on your computer every 5 seconds.
+4. **Re-Open Previous Projects**: Use **Open Saved Project (.xlsx)** to reload and continue working on any previously exported RMC file.
+
+---
+
+## 🌐 Deploy to GitHub Pages
+
+1. Commit and push `index.html`, `style.css`, `app.js`, and `README.md` to your GitHub repository (`main` branch).
+2. Go to **Settings > Pages > Branch: `main` > Save**.
+3. Changes will be live within 1–3 minutes.
