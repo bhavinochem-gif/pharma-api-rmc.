@@ -1,36 +1,31 @@
-# Pharma API Raw Material Costing (RMC) & Retro-Synthetic Engine
+# Pharma API Raw Material Costing (RMC), Scale-Up & Consolidated BOM Engine
 
-A specialized browser-based stoichiometry, retro-synthetic backward batch scaler, and process mass balance application engineered for Pharmaceutical Process R&D and API Plant Operations.
-
----
-
-## ⚡ Key Features
-
-1. **Retro-Synthetic Backward Batch Scaler**: 
-   * Enter your target API output (e.g., 100 kg) and stage-wise expected yields.
-   * Automatically calculates required Stage-1 KSM charge:
-     $$\text{Required Moles}_{\text{Substrate}, k} = \frac{\text{Moles}_{\text{Product}, k}}{\text{Yield Fraction}_k}$$
-     $$\text{Required Mass}_{\text{Substrate}, k} = \frac{\text{Required Moles}_{\text{Substrate}, k} \times MW_{\text{Substrate}, k}}{1000}$$
-2. **Dual Deletion System**:
-   * **Stages**: Delete via the top header button or the bottom control bar.
-   * **Materials**: Delete individual rows directly or use checkboxes for batch multi-row deletion.
-3. **Data Protection**:
-   * Instant `localStorage` synchronization on every keystroke.
-   * Optional 5-second background local disk auto-save via File System Access API.
-   * Re-import previously exported `.xlsx` files with full project state restoration.
-4. **Comprehensive Chemical Resolver**:
-   * Multi-tier lookup via internal database, PubChem PUG REST, PUG View experimental density crawler, and NCI CIR.
-   * Automatic chemical query normalizer to resolve catalysts and alkoxides (e.g., *titanium tetraisopropoxide*, *5% palladium on alumina dry powder*).
+A comprehensive browser application engineered for Process Chemistry, Chemical R&D, and Production Planning to scale recipes, calculate solvent recoveries, and aggregate raw material procurement quantities across multi-stage syntheses.
 
 ---
 
-## 📋 Excel Price Master Upload Template
+## 📦 Key Consolidated BOM Capabilities
 
-Prepare your `.xlsx` or `.csv` rate master with these column headers:
+1. **Multi-Stage Material Consolidation**:
+   * If a solvent or reagent (e.g., Methanol) is used across multiple reaction stages (e.g., Stage 1, Stage 2, and Stage 3), the engine groups the material by name and unit.
+   * Outputs a single row in the exported BOM containing:
+     - **Total Gross Quantity Required** across all stages.
+     - **Total Solvent Recovered Quantity**.
+     - **Net Fresh Quantity Required** for purchase.
+     - Traceability list of all stages where the material is consumed.
 
-| Name of Raw Material | CAS No | Molecular Weight | Density | Rate/Kg |
-| :--- | :--- | :--- | :--- | :--- |
-| Benzaldehyde | 100-52-7 | 106.12 | 1.044 | 350.00 |
-| Titanium tetraisopropoxide | 546-68-9 | 284.22 | 0.960 | 950.00 |
-| 5% Palladium on alumina | 7440-05-3 | 106.42 | 1.000 | 18500.00 |
-| Toluene | 108-88-3 | 92.14 | 0.867 | 95.00 |
+2. **Dual Export Options**:
+   * **Export Consolidated BOM**: Generates a dedicated procurement sheet with totals, neat borders, and stage traceability.
+   * **Export Full RMC Workbook**: Generates a multi-sheet Excel file containing both `Stage_Costing_Breakdown` and `Consolidated_BOM`.
+
+3. **Reverse-Yield Scale-Up (`Auto-Scale`)**:
+   * Enter your desired finished API batch quantity (e.g., `50 kg`) and click **Auto-Scale**.
+   * Evaluates yields backwards from the final reaction stage to Stage 1, automatically scaling all intermediate batches and ratio-linked reagents.
+
+---
+
+## 🌐 Deploy to GitHub Pages
+
+1. Push `index.html`, `style.css`, `app.js`, and `README.md` to your GitHub repository.
+2. Under **Settings > Pages**, choose **Branch: `main`** and **Folder: `/(root)`**.
+3. Click **Save** to make the app accessible online.
