@@ -27,7 +27,7 @@
 }
 
 .rmc-table input, .rmc-table select {
-  padding: 4px 6px;
+  padding: 4px 5px;
   font-size: 0.72rem;
   border-radius: 4px;
   border: 1px solid #cbd5e1;
@@ -54,6 +54,11 @@
 
 .stage-lookup-badge {
   background-color: #f0fdf4 !important;
+}
+
+.stage-lookup-badge input.rm-name {
+  color: #15803d;
+  font-weight: 700;
 }
 
 .yield-badge {
