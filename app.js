@@ -2,6 +2,7 @@
 let priceMaster = {};
 let stageCount = 0;
 let isRestoringState = false;
+let isRetroCalculating = false;
 let localFileHandle = null;
 
 const STORAGE_KEY = "PHARMA_RMC_AUTOSAVE_STATE";
@@ -9,7 +10,6 @@ const PRICE_MASTER_STORAGE_KEY = "PHARMA_RMC_PRICE_MASTER";
 
 // -------------------------------------------------------------
 // Comprehensive Process Chemistry & Reagents Knowledgebase
-// (Instant resolution for catalysts, alkoxides, organometallics & solvents)
 // -------------------------------------------------------------
 const INTERNAL_CHEMICAL_DB = {
   // Catalysts & Supported Metals
@@ -154,7 +154,17 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupEventListeners() {
   document.getElementById("btnAddStage").addEventListener("click", () => {
     addNewStage(`Stage-${stageCount + 1}`);
+    conditionalAutoRetroScale();
     recalculateAll();
+    saveStateToLocalStorage();
+  });
+
+  document.getElementById("btnTriggerRetroScale").addEventListener("click", () => {
+    runRetroSyntheticScaling();
+  });
+
+  document.getElementById("retroModeToggle").addEventListener("change", () => {
+    conditionalAutoRetroScale();
     saveStateToLocalStorage();
   });
 
@@ -166,10 +176,13 @@ function setupEventListeners() {
 
   // Global Event Delegation: Capture inputs across all dynamic tables
   document.addEventListener("input", (e) => {
-    if (isRestoringState) return;
+    if (isRestoringState || isRetroCalculating) return;
     if (e.target.matches("input, select, textarea")) {
       if (e.target.classList.contains("rm-name")) {
         autoFillRM(e.target);
+      }
+      if (e.target.id === "apiBatchSize" || e.target.classList.contains("stage-target-yield")) {
+        conditionalAutoRetroScale();
       }
       recalculateAll();
       saveStateToLocalStorage();
@@ -177,10 +190,13 @@ function setupEventListeners() {
   });
 
   document.addEventListener("change", (e) => {
-    if (isRestoringState) return;
+    if (isRestoringState || isRetroCalculating) return;
     if (e.target.matches("input, select, textarea")) {
       if (e.target.classList.contains("rm-name")) {
         autoFillRM(e.target);
+      }
+      if (e.target.id === "apiBatchSize" || e.target.classList.contains("stage-target-yield")) {
+        conditionalAutoRetroScale();
       }
       recalculateAll();
       saveStateToLocalStorage();
@@ -188,29 +204,109 @@ function setupEventListeners() {
   });
 }
 
+function conditionalAutoRetroScale() {
+  const isAuto = document.getElementById("retroModeToggle")?.checked;
+  if (isAuto) {
+    runRetroSyntheticScaling();
+  }
+}
+
 // -------------------------------------------------------------
-// 2. Intelligent Chemical Name Normalizer
+// 2. Retro-Synthetic Backward Batch Scaler Engine
+// -------------------------------------------------------------
+function runRetroSyntheticScaling() {
+  if (isRetroCalculating) return;
+  isRetroCalculating = true;
+
+  const targetApiBatchKg = parseFloat(document.getElementById("apiBatchSize").value) || 100;
+  const stageCards = Array.from(document.querySelectorAll(".stage-card"));
+
+  if (stageCards.length === 0) {
+    isRetroCalculating = false;
+    return;
+  }
+
+  // Work strictly BACKWARDS from Stage N to Stage 1
+  let requiredNextSubstrateKg = targetApiBatchKg;
+  let cumulativeYieldFraction = 1.0;
+
+  for (let i = stageCards.length - 1; i >= 0; i--) {
+    const card = stageCards[i];
+    const rows = card.querySelectorAll("tbody tr");
+    if (rows.length === 0) continue;
+
+    const refRow = rows[0];
+    const targetYieldPct = parseFloat(card.querySelector(".stage-target-yield").value) || 85;
+    const yieldFraction = Math.max(0.001, targetYieldPct / 100);
+    cumulativeYieldFraction *= yieldFraction;
+
+    let prodMW = parseFloat(card.querySelector(".stage-prod-mw").value) || 0;
+    let subMW = parseFloat(refRow.querySelector(".mw").value) || 0;
+
+    // Molecular weight fallback heuristics
+    if (prodMW <= 0 && subMW > 0) prodMW = subMW;
+    if (subMW <= 0 && prodMW > 0) subMW = prodMW;
+    if (prodMW <= 0 && subMW <= 0) { prodMW = 100; subMW = 100; }
+
+    // Stage actual output must deliver required quantity for downstream stage / final API
+    card.querySelector(".stage-actual-qty").value = requiredNextSubstrateKg.toFixed(2);
+
+    // Moles of Product required
+    const prodMolesRequired = (requiredNextSubstrateKg * 1000) / prodMW;
+    // Input Moles of Reference Starting Material needed
+    const subMolesRequired = prodMolesRequired / yieldFraction;
+    // Input Mass of Reference Starting Material needed (kg)
+    const subKgRequired = (subMolesRequired * subMW) / 1000;
+
+    // Set Sr. No. 1 Quantity
+    const refUnit = refRow.querySelector(".unit-select").value;
+    const refDensity = parseFloat(refRow.querySelector(".density").value) || 1.0;
+
+    let displayQty = subKgRequired;
+    if (refUnit === "L") displayQty = subKgRequired / refDensity;
+    else if (refUnit === "g") displayQty = subKgRequired * 1000;
+
+    refRow.querySelector(".qty").value = displayQty.toFixed(3);
+
+    // Feed backward into previous stage
+    requiredNextSubstrateKg = subKgRequired;
+  }
+
+  // Update Top Metrics Banner
+  const ksmStage1Kg = requiredNextSubstrateKg;
+  const cumYieldPct = cumulativeYieldFraction * 100;
+  const stepdownFactor = targetApiBatchKg > 0 ? ksmStage1Kg / targetApiBatchKg : 1.0;
+
+  document.getElementById("bannerTargetAPI").innerText = targetApiBatchKg.toFixed(2);
+  document.getElementById("bannerCumYield").innerText = `${cumYieldPct.toFixed(2)}%`;
+  document.getElementById("bannerStepdown").innerText = `${stepdownFactor.toFixed(2)}x`;
+  document.getElementById("bannerKsmRequired").innerText = `${ksmStage1Kg.toFixed(2)} kg`;
+
+  isRetroCalculating = false;
+  updateStageNumbersAndCascade(true);
+  recalculateAll();
+}
+
+// -------------------------------------------------------------
+// 3. Intelligent Chemical Name Normalizer
 // -------------------------------------------------------------
 function normalizeChemicalQuery(raw) {
   if (!raw) return "";
   let s = String(raw).trim();
 
-  // Strip percentages (e.g., "5% palladium", "10% wt", "60% in mineral oil")
+  // Strip percentages & molarities
   s = s.replace(/^\s*\d+(\.\d+)?\s*%\s*(w\/w|v\/v|wt)?\s*/i, "");
   s = s.replace(/\s*\d+(\.\d+)?\s*%\s*(w\/w|v\/v|wt)?/gi, "");
-  // Strip molarities (e.g., "2.5 M in hexanes")
   s = s.replace(/\s*\d+(\.\d+)?\s*M\s*(in\s+[a-z0-9]+)?/gi, "");
 
-  // Strip physical states, formulations, and purity descriptors
+  // Strip descriptors
   s = s.replace(/\b(dry powder|wet powder|powder|dry basis|wet basis|floc|flakes|pellets|beads|granules|slurry|dispersion in mineral oil|in mineral oil|in oil|reagent grade|tech grade|technical grade|extra pure|pure|anhydrous|concentrated|conc\.|conc|aqueous|aq\.|aq)\b/gi, "");
-
-  // Remove excess parentheses, commas, and whitespace
   s = s.replace(/[(),]/g, " ").replace(/\s+/g, " ").trim();
   return s;
 }
 
 // -------------------------------------------------------------
-// 3. Multi-Tier Online Chemical Resolver
+// 4. Multi-Tier Online Chemical Resolver
 // -------------------------------------------------------------
 async function fetchOnlineChemData(btn, inputElement) {
   const row = inputElement.closest("tr");
@@ -231,7 +327,7 @@ async function fetchOnlineChemData(btn, inputElement) {
   let foundDensity = 0;
 
   try {
-    // TIER 1: Check In-App Knowledgebase (Direct or Cleaned)
+    // TIER 1: In-App Knowledgebase
     const dbKeyRaw = rawName.toLowerCase();
     const dbKeyClean = cleanName.toLowerCase();
     const matchedDB = INTERNAL_CHEMICAL_DB[dbKeyClean] || INTERNAL_CHEMICAL_DB[dbKeyRaw];
@@ -242,7 +338,7 @@ async function fetchOnlineChemData(btn, inputElement) {
       foundDensity = matchedDB.density || 0;
     }
 
-    // TIER 2: Query PubChem if fields remain incomplete
+    // TIER 2: PubChem
     if (!foundCAS || foundMW === 0 || foundDensity === 0) {
       let cid = null;
       const searchTerms = [cleanName, rawName];
@@ -258,7 +354,6 @@ async function fetchOnlineChemData(btn, inputElement) {
         } catch (e) {}
       }
 
-      // If direct CID lookup fails, query PubChem Autocomplete
       if (!cid) {
         try {
           const autoRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(cleanName)}/json?limit=1`);
@@ -276,7 +371,6 @@ async function fetchOnlineChemData(btn, inputElement) {
         } catch (e) {}
       }
 
-      // Query Properties, Synonyms, and PUG View from CID
       if (cid) {
         // Molecular Weight
         if (foundMW === 0) {
@@ -310,7 +404,7 @@ async function fetchOnlineChemData(btn, inputElement) {
       }
     }
 
-    // TIER 3: NCI CIR (Cactus) Fallback
+    // TIER 3: NCI CIR Fallback
     if (!foundCAS || foundMW === 0) {
       try {
         if (!foundCAS) {
@@ -330,7 +424,7 @@ async function fetchOnlineChemData(btn, inputElement) {
       } catch (e) {}
     }
 
-    // Apply Retrieved Values to Row
+    // Apply Values
     let appliedCount = 0;
     if (foundCAS) {
       row.querySelector(".cas-no").value = foundCAS;
@@ -343,19 +437,18 @@ async function fetchOnlineChemData(btn, inputElement) {
     if (foundDensity > 0) {
       row.querySelector(".density").value = foundDensity.toFixed(3);
       appliedCount++;
-      // Auto-set volume ratio and liters for liquid reagents
       if (foundDensity !== 1.0) {
         row.querySelector(".ratio-type").value = "volume";
         row.querySelector(".unit-select").value = "L";
       }
     } else {
-      // Solid / supported catalyst fallback
       if (row.querySelector(".density").value === "" || parseFloat(row.querySelector(".density").value) === 0) {
         row.querySelector(".density").value = "1.0";
       }
     }
 
     if (appliedCount > 0) {
+      conditionalAutoRetroScale();
       recalculateAll();
       saveStateToLocalStorage();
     } else {
@@ -371,7 +464,6 @@ async function fetchOnlineChemData(btn, inputElement) {
   }
 }
 
-// PubChem PUG View Crawler for Experimental Density
 async function fetchDensityFromPubChemPUGView(cid) {
   try {
     const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON?heading=Density`;
@@ -423,7 +515,7 @@ async function fetchDensityFromPubChemPUGView(cid) {
 }
 
 // -------------------------------------------------------------
-// 4. Excel Price Master Parser & Autocomplete
+// 5. Excel Price Master Parser & Autocomplete
 // -------------------------------------------------------------
 function cleanHeader(headerStr) {
   if (!headerStr) return "";
@@ -541,7 +633,7 @@ function renderDatalist() {
   Object.values(priceMaster).forEach((item) => {
     const opt = document.createElement("option");
     opt.value = item.name;
-    opt.label = `Rate: ₹${item.rate}/kg ${item.cas ? '| CAS: ' + item.cas : ''}`;
+    opt.label = `Rate: ₹${item.rate}/kg${item.cas ? '| CAS: ' + item.cas : ''}`;
     dataList.appendChild(opt);
   });
 }
@@ -554,7 +646,7 @@ function autoFillRM(input) {
   const lowerVal = rawVal.toLowerCase();
   const cleanVal = normalizeChemicalQuery(rawVal).toLowerCase();
 
-  // Match in uploaded Price Master
+  // Match in Price Master
   if (priceMaster[lowerVal] || priceMaster[cleanVal]) {
     const item = priceMaster[lowerVal] || priceMaster[cleanVal];
     if (item.cas) row.querySelector(".cas-no").value = item.cas;
@@ -579,12 +671,13 @@ function autoFillRM(input) {
 }
 
 // -------------------------------------------------------------
-// 5. Persistent Local Storage (Full Page Refresh Safety)
+// 6. Persistent Local Storage
 // -------------------------------------------------------------
 function getSerializedProjectState() {
   const state = {
     projectName: document.getElementById("projectName").value || "",
     apiBatchSize: parseFloat(document.getElementById("apiBatchSize").value) || 100,
+    retroMode: document.getElementById("retroModeToggle")?.checked ?? true,
     stages: []
   };
 
@@ -593,6 +686,7 @@ function getSerializedProjectState() {
       stageName: stageCard.querySelector(".stage-name-input").value || "",
       prodName: stageCard.querySelector(".stage-prod-name").value || "",
       prodMw: stageCard.querySelector(".stage-prod-mw").value || "0",
+      targetYield: stageCard.querySelector(".stage-target-yield").value || "85",
       actualQty: stageCard.querySelector(".stage-actual-qty").value || "0",
       materials: []
     };
@@ -654,6 +748,9 @@ function applyProjectState(state) {
 
   document.getElementById("projectName").value = state.projectName || "";
   document.getElementById("apiBatchSize").value = state.apiBatchSize || 100;
+  if (document.getElementById("retroModeToggle")) {
+    document.getElementById("retroModeToggle").checked = state.retroMode ?? true;
+  }
 
   const container = document.getElementById("stagesContainer");
   container.innerHTML = "";
@@ -671,6 +768,7 @@ function applyProjectState(state) {
 
     stageCard.querySelector(".stage-prod-name").value = stageData.prodName || "";
     stageCard.querySelector(".stage-prod-mw").value = stageData.prodMw || "0";
+    stageCard.querySelector(".stage-target-yield").value = stageData.targetYield || "85";
     stageCard.querySelector(".stage-actual-qty").value = stageData.actualQty || "0";
 
     const tbody = stageCard.querySelector("tbody");
@@ -711,7 +809,7 @@ function resetProject() {
 }
 
 // -------------------------------------------------------------
-// 6. Background 5-Second Local Disk Auto-Save & Sync
+// 7. Background 5-Second Local Disk Auto-Save & Sync
 // -------------------------------------------------------------
 async function handleFiveSecondAutoSave() {
   saveStateToLocalStorage();
@@ -759,7 +857,7 @@ async function linkLocalDiskFile() {
 }
 
 // -------------------------------------------------------------
-// 7. Stage & Material HTML Template Generators
+// 8. Stage & Material HTML Template Generators
 // -------------------------------------------------------------
 function getStageTemplateHTML(stageId, stageTitle) {
   return `
@@ -813,7 +911,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </table>
     </div>
 
-    <!-- Stage Subtotal Summary Strip -->
     <div class="bg-slate-100/90 px-4 py-2.5 border-t border-b border-slate-200 flex flex-wrap justify-between items-center text-xs">
       <span class="font-bold text-slate-700 uppercase tracking-wide flex items-center">
         <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1 text-indigo-600"></i> Stage Cost Subtotals
@@ -836,9 +933,8 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </div>
     </div>
 
-    <!-- Yield & Mass Balance Control Panel -->
     <div class="bg-slate-50/80 p-4 space-y-3">
-      <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+      <div class="grid grid-cols-1 md:grid-cols-7 gap-3 items-center">
         <div class="md:col-span-2">
           <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Isolated Product / Intermediate Name</label>
           <input type="text" class="stage-prod-name w-full border rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white" value="Intermediate Output" oninput="handleStageNameChange()" />
@@ -851,6 +947,10 @@ function getStageTemplateHTML(stageId, stageTitle) {
               <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
             </button>
           </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-violet-700 uppercase mb-0.5" title="Target/Expected yield used by retro-scaler">Target % Molar Yield</label>
+          <input type="number" step="any" min="1" max="100" class="stage-target-yield w-full border border-violet-300 rounded px-2 py-1 text-xs font-bold text-violet-700 bg-violet-50 text-right" value="85" />
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Actual Output (kg)</label>
@@ -974,6 +1074,7 @@ function removeStage(stageId) {
   if (stage) {
     stage.remove();
     updateStageNumbersAndCascade(false);
+    conditionalAutoRetroScale();
     recalculateAll();
     saveStateToLocalStorage();
   }
@@ -1029,6 +1130,7 @@ function updateStageNumbersAndCascade(preserveExisting = false) {
 
 function handleStageNameChange() {
   updateStageNumbersAndCascade(false);
+  conditionalAutoRetroScale();
   recalculateAll();
   saveStateToLocalStorage();
 }
@@ -1053,6 +1155,7 @@ async function fetchProductMWOnline(btn) {
       const mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
       if (mw > 0) {
         card.querySelector(".stage-prod-mw").value = parseFloat(mw).toFixed(2);
+        conditionalAutoRetroScale();
         recalculateAll();
         saveStateToLocalStorage();
       }
@@ -1068,7 +1171,7 @@ async function fetchProductMWOnline(btn) {
 }
 
 // -------------------------------------------------------------
-// 8. Master Stoichiometry, Yield & Cost Engine
+// 9. Forward Stoichiometry, Yield & Cost Engine
 // -------------------------------------------------------------
 function recalculateAll() {
   const apiBatchSize = parseFloat(document.getElementById("apiBatchSize").value) || 1;
@@ -1221,7 +1324,7 @@ function recalculateAll() {
 }
 
 // -------------------------------------------------------------
-// 9. Excel Import/Export Handling
+// 10. Excel Import/Export Handling
 // -------------------------------------------------------------
 function buildWorkbookFromState(state) {
   const wb = XLSX.utils.book_new();
@@ -1231,6 +1334,7 @@ function buildWorkbookFromState(state) {
     const stageName = stageCard.querySelector(".stage-name-input").value;
     const prodName = stageCard.querySelector(".stage-prod-name").value;
     const prodMw = stageCard.querySelector(".stage-prod-mw").value;
+    const targetYield = stageCard.querySelector(".stage-target-yield").value;
     const actualKg = stageCard.querySelector(".stage-actual-qty").value;
     const theorKg = stageCard.querySelector(".stage-theor-qty").innerText;
     const molarYield = stageCard.querySelector(".stage-molar-yield").innerText;
@@ -1241,10 +1345,10 @@ function buildWorkbookFromState(state) {
 
     exportData.push({ "Stage / Material": `=== ${stageName.toUpperCase()} ===` });
     exportData.push({
-      "Stage / Material": `Product: ${prodName} | MW: ${prodMw} g/mol | Actual Out: ${actualKg} kg | Theor Out: ${theorKg} | % Molar Yield: ${molarYield} | % w/w: ${wwYield}`
+      "Stage / Material": `Product: ${prodName} | MW: ${prodMw} g/mol \vert{} Target Yield:${targetYield}% | Actual Out: ${actualKg} kg \vert{} Theor Out:${theorKg} | % Molar Yield: ${molarYield} \vert{} \% w/w:${wwYield}`
     });
     exportData.push({
-      "Stage / Material": `STAGE SUBTOTAL: Cost w/o Rec: ${stageCostWo} | Cost with Rec: ${stageCostW} | Stage Contribution: ${stageCont}`
+      "Stage / Material": `STAGE SUBTOTAL: Cost w/o Rec: ${stageCostWo} | Cost with Rec: ${stageCostW} \vert{} Stage Contribution:${stageCont}`
     });
 
     const rows = stageCard.querySelectorAll("tbody tr");
