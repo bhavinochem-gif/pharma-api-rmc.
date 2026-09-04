@@ -240,7 +240,6 @@ function runRetroSyntheticScaling() {
 // -------------------------------------------------------------
 function getStageTemplateHTML(stageId, stageTitle) {
   return `
-    <!-- Stage Header with Option 1 Stage Delete -->
     <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center space-x-2 flex-grow max-w-md">
         <span class="bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded stage-badge">Stage</span>
@@ -254,7 +253,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </div>
 
       <div class="flex items-center space-x-2">
-        <!-- Option 2 for RM Delete: Batch Delete Selected (hidden until rows checked) -->
         <button 
           id="btnBatchDelete_${stageId}" 
           onclick="deleteSelectedRows('${stageId}')" 
@@ -268,7 +266,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
           <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> Add Material
         </button>
 
-        <!-- Option 1 for Stage Delete: Header Action Button -->
         <button 
           onclick="removeStage('${stageId}')" 
           class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center border border-rose-200 transition" 
@@ -279,12 +276,10 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </div>
     </div>
 
-    <!-- RM Table with Master Selection Checkbox -->
     <div class="table-scroll">
       <table class="rmc-table" id="table_${stageId}">
         <thead>
           <tr>
-            <!-- Option 2 for RM Delete: Master Checkbox -->
             <th class="w-8" title="Select all rows for batch deletion">
               <input type="checkbox" onchange="toggleSelectAllRows('${stageId}', this)" class="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer" />
             </th>
@@ -306,7 +301,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
             <th>Cost<br/>(with Rec.)</th>
             <th>% Cont.<br/>(w/o Rec.)</th>
             <th>% Cont.<br/>(with Rec.)</th>
-            <!-- Option 1 for RM Delete: Row Action Header -->
             <th class="w-14" title="Option 1: Delete individual row">Action</th>
           </tr>
         </thead>
@@ -314,7 +308,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </table>
     </div>
 
-    <!-- Stage Subtotal Summary Strip -->
     <div class="bg-slate-100/90 px-4 py-2.5 border-t border-b border-slate-200 flex flex-wrap justify-between items-center text-xs">
       <span class="font-bold text-slate-700 uppercase tracking-wide flex items-center">
         <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1 text-indigo-600"></i> Stage Cost Subtotals
@@ -337,7 +330,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
       </div>
     </div>
 
-    <!-- Yield & Retro-Synthetic Target Control Panel -->
     <div class="bg-slate-50/80 p-4 space-y-3">
       <div class="grid grid-cols-1 md:grid-cols-7 gap-3 items-center">
         <div class="md:col-span-2">
@@ -373,7 +365,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
         </div>
       </div>
 
-      <!-- Stage Bottom Strip with Option 2 Stage Delete & Mass Balance -->
       <div class="pt-2 border-t border-slate-200/60 flex flex-wrap justify-between items-center text-xs text-slate-600 gap-3">
         <div class="flex items-center space-x-4">
           <span><strong>Total Mass In:</strong> <span class="stage-mass-in font-bold text-slate-800">0.00 kg</span></span>
@@ -385,7 +376,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
           <span><strong>% w/w Yield:</strong> <span class="stage-ww-yield font-bold text-indigo-700">0.00%</span></span>
           <span><strong>Stage PMI:</strong> <span class="stage-pmi font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">0.00</span> kg/kg</span>
 
-          <!-- Bonus: Clear All Materials in Stage -->
           <button 
             onclick="clearAllMaterialsInStage('${stageId}')" 
             class="text-slate-600 hover:text-slate-800 font-medium px-2 py-1 rounded hover:bg-slate-200 text-[11px] transition flex items-center border border-slate-300"
@@ -394,7 +384,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
             <i data-lucide="eraser" class="w-3 h-3 mr-1"></i> Clear Materials
           </button>
 
-          <!-- Option 2 for Stage Delete: Footer Control Action -->
           <button 
             onclick="removeStage('${stageId}')" 
             class="text-rose-600 hover:text-rose-800 font-semibold px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-[11px] transition flex items-center border border-rose-200"
@@ -410,7 +399,6 @@ function getStageTemplateHTML(stageId, stageTitle) {
 
 function getMaterialRowHTML(isFirstRow, rowCount) {
   return `
-    <!-- Option 2 for RM Delete: Individual Row Checkbox -->
     <td class="text-center">
       <input 
         type="checkbox" 
@@ -480,7 +468,6 @@ function getMaterialRowHTML(isFirstRow, rowCount) {
     <td class="read-only-cell cost-w-rec">0.00</td>
     <td class="read-only-cell cont-wo-rec">0.00%</td>
     <td class="read-only-cell cont-w-rec">0.00%</td>
-    <!-- Option 1 for RM Delete: Individual Row Action Button -->
     <td class="text-center">
       ${isFirstRow 
         ? '<span class="text-xs text-slate-300 font-bold" title="Reference Substrate">Ref</span>' 
@@ -527,7 +514,7 @@ function removeStage(stageId) {
   }
 }
 
-// Helper: Clear all materials in stage except Reference Row 1
+// Clear all materials in stage except Reference Row 1
 function clearAllMaterialsInStage(stageId) {
   const stage = document.getElementById(stageId);
   if (!stage) return;
@@ -586,7 +573,6 @@ function toggleSelectAllRows(stageId, masterCheckbox) {
 
   const checkboxes = stage.querySelectorAll("tbody .row-select-cb");
   checkboxes.forEach((cb) => {
-    // Only select non-reference rows for deletion
     if (cb.dataset.isRef !== "true") {
       cb.checked = masterCheckbox.checked;
       const tr = cb.closest("tr");
@@ -645,7 +631,6 @@ function deleteSelectedRows(stageId) {
       td.innerText = index + 1;
     });
 
-    // Reset Master Checkbox
     const masterCb = stage.querySelector("thead input[type='checkbox']");
     if (masterCb) masterCb.checked = false;
 
