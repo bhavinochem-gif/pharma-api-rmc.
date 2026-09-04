@@ -3,26 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pharma API - RMC, Mass Balance & Yield Engine</title>
-  <!-- Tailwind CSS CDN -->
+  <title>Pharma API - RMC & Retro-Synthetic Stoichiometry Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS CDN for Excel Upload/Export -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
-  <!-- Header Navigation -->
   <header class="bg-indigo-950 text-white shadow-lg sticky top-0 z-50">
     <div class="max-w-full px-6 py-3 flex flex-wrap justify-between items-center gap-4">
       <div class="flex items-center space-x-3">
         <i data-lucide="flask-conical" class="w-8 h-8 text-teal-400"></i>
         <div>
-          <h1 class="text-xl font-bold tracking-tight">Pharma API RMC & Stoichiometry Engine</h1>
+          <h1 class="text-xl font-bold tracking-tight">Pharma API RMC & Retro-Synthetic Engine</h1>
           <div class="flex items-center space-x-2 text-xs text-indigo-200">
-            <span>Process Chemistry Cost Contribution</span>
+            <span>Backward Yield Scaler & Stoichiometry Engine</span>
             <span>•</span>
             <span id="autoSaveIndicator" class="text-emerald-400 font-medium flex items-center">
               <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i> Auto-saved locally
@@ -32,24 +28,20 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <!-- Re-upload / Open existing project file -->
         <label class="bg-indigo-800 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center cursor-pointer shadow transition border border-indigo-600">
           <i data-lucide="folder-open" class="w-4 h-4 mr-1.5 text-teal-300"></i> Open Saved Project (.xlsx)
           <input type="file" id="projectFileInput" accept=".xlsx, .xls" class="hidden" />
         </label>
 
-        <!-- Live Local Disk Background Auto-Sync -->
         <button id="btnLinkLocalFile" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow transition border border-slate-600">
           <i data-lucide="hard-drive-download" class="w-4 h-4 mr-1.5 text-amber-400"></i>
           <span id="syncBtnLabel">Link Local Disk Auto-Save (5s)</span>
         </button>
 
-        <!-- Export Excel -->
         <button id="btnExport" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center shadow transition">
           <i data-lucide="file-spreadsheet" class="w-4 h-4 mr-1.5"></i> Export RMC Sheet
         </button>
 
-        <!-- Reset Project -->
         <button id="btnResetProject" class="bg-rose-900/70 hover:bg-rose-800 text-rose-100 px-2.5 py-2 rounded-lg text-xs font-semibold flex items-center transition" title="Clear all data and start fresh">
           <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
         </button>
@@ -59,19 +51,31 @@
 
   <main class="max-w-full px-6 py-6 space-y-6">
 
-    <!-- Meta Configuration Card -->
-    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <h2 class="text-base font-semibold text-slate-700 mb-4 flex items-center">
-        <i data-lucide="settings" class="w-5 h-5 mr-2 text-indigo-600"></i> Project & Final API Parameters
-      </h2>
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-3 gap-3">
+        <h2 class="text-base font-semibold text-slate-700 flex items-center">
+          <i data-lucide="settings" class="w-5 h-5 mr-2 text-indigo-600"></i> Project & Retro-Synthetic Batch Sizing
+        </h2>
+        
+        <div class="flex items-center space-x-3">
+          <label class="flex items-center space-x-2 cursor-pointer text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-200 transition">
+            <input type="checkbox" id="retroModeToggle" checked class="w-4 h-4 text-indigo-600 rounded focus:ring-0 cursor-pointer" />
+            <span>Auto-Scale Backward (Live Sync)</span>
+          </label>
+          <button id="btnTriggerRetroScale" class="bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center shadow transition">
+            <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1.5"></i> Run Retro-Synthetic Scaler
+          </button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Project / API Name</label>
           <input type="text" id="projectName" placeholder="e.g., Atorvastatin Calcium API" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Final API Target Output (kg)</label>
-          <input type="number" id="apiBatchSize" value="100" min="0.001" step="any" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Target API Batch Output (kg)</label>
+          <input type="number" id="apiBatchSize" value="100" min="0.001" step="any" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-700 outline-none" />
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Upload RM Price Master</label>
@@ -87,18 +91,29 @@
           </button>
         </div>
       </div>
+
+      <div id="retroMetricsBanner" class="p-3.5 bg-gradient-to-r from-violet-50 via-indigo-50 to-slate-50 border border-violet-200 rounded-xl flex flex-wrap justify-between items-center text-xs text-slate-700 gap-3">
+        <div class="flex items-center space-x-2">
+          <span class="bg-violet-600 text-white px-2 py-0.5 rounded font-bold text-[11px] uppercase tracking-wide">Retro-Scaler Active</span>
+          <span class="text-slate-600">Scaling backward from target <strong><span id="bannerTargetAPI">100</span> kg finished API</strong></span>
+        </div>
+        <div class="flex flex-wrap items-center space-x-6 font-semibold">
+          <div>Cumulative Process Yield: <span id="bannerCumYield" class="text-violet-800 font-bold">100.00%</span></div>
+          <div>Step-down Factor: <span id="bannerStepdown" class="text-indigo-800 font-bold">1.00x</span></div>
+          <div class="bg-white px-2.5 py-1 rounded-md border border-violet-300 shadow-sm text-indigo-900">
+            Stage-1 KSM Charge: <strong id="bannerKsmRequired" class="text-violet-700 text-sm">100.00 kg</strong>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- Global Auto-Complete Datalist -->
     <datalist id="rmMasterList"></datalist>
 
-    <!-- Reaction Stages Container -->
     <div id="stagesContainer" class="space-y-6"></div>
 
-    <!-- Overall Summary Dashboard -->
     <section class="bg-white rounded-xl shadow-md border border-slate-200 p-6 overflow-hidden">
       <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center">
-        <i data-lucide="pie-chart" class="w-5 h-5 mr-2 text-indigo-600"></i> Overall API Cumulative Cost Summary
+        <i data-lucide="pie-chart" class="w-5 h-5 mr-2 text-indigo-600"></i> Overall API Cumulative Cost & Yield Summary
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
