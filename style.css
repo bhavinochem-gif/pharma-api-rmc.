@@ -11,13 +11,25 @@
 }
 
 .rmc-table th {
-  background-color: #f8fafc;
-  color: #334155;
+  background-color: #0f172a;
+  color: #f8fafc;
   font-weight: 700;
   padding: 8px 4px;
   text-align: center;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid #334155;
   white-space: nowrap;
+}
+
+.rmc-table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.rmc-table tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.rmc-table tbody tr:hover {
+  background-color: #f1f5f9;
 }
 
 .rmc-table td {
@@ -86,4 +98,13 @@
   background-color: #fee2e2;
   color: #b91c1c;
   border: 1px solid #fca5a5;
+}
+
+/* Custom Checkbox */
+input[type="checkbox"] {
+  accent-color: #4f46e5;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 3px;
+  cursor: pointer;
 }
