@@ -4,32 +4,33 @@ A specialized browser-based stoichiometry, retro-synthetic backward batch scaler
 
 ---
 
-## 🗑️ Dual Deletion Controls
+## ⚡ Key Features
 
-### 1. Stage Deletion
-* **Option 1 (Header Action)**: Click the **Delete Stage** button located in the top-right header of any stage card.
-* **Option 2 (Bottom Control Action)**: Click the **Delete This Stage** button located in the bottom mass-balance footer bar of each stage card (next to the **Clear Materials** shortcut).
-
-### 2. Raw Material Line Deletion
-* **Option 1 (Inline Row Action)**: Click the red trash icon on the far-right action column of any individual raw material line.
-* **Option 2 (Multi-Select Batch Delete)**: Check the boxes for the lines you want to delete (or use the master checkbox in the column header), then click the **Delete Selected (N)** button that appears on the stage toolbar.
-
----
-
-## ⚡ Retro-Synthetic Backward Batch Scaler
-
-Enter your **Target API Output (e.g., 100 kg finished API)** and each stage's **Target % Molar Yield** (default: `85%`). The app automatically calculates backward to determine the exact Stage-1 Key Starting Material (KSM) mass needed:
-
-$$\text{Moles}_{\text{Product}, k} = \frac{\text{Required Mass}_k \times 1000}{MW_{\text{Product}, k}}$$
-
-$$\text{Required Moles}_{\text{Substrate}, k} = \frac{\text{Moles}_{\text{Product}, k}}{\text{Yield Fraction}_k}$$
-
-$$\text{Required Mass}_{\text{Substrate}, k} = \frac{\text{Required Moles}_{\text{Substrate}, k} \times MW_{\text{Substrate}, k}}{1000}$$
+1. **Retro-Synthetic Backward Batch Scaler**: 
+   * Enter your target API output (e.g., 100 kg) and stage-wise expected yields.
+   * Automatically calculates required Stage-1 KSM charge:
+     $$\text{Required Moles}_{\text{Substrate}, k} = \frac{\text{Moles}_{\text{Product}, k}}{\text{Yield Fraction}_k}$$
+     $$\text{Required Mass}_{\text{Substrate}, k} = \frac{\text{Required Moles}_{\text{Substrate}, k} \times MW_{\text{Substrate}, k}}{1000}$$
+2. **Dual Deletion System**:
+   * **Stages**: Delete via the top header button or the bottom control bar.
+   * **Materials**: Delete individual rows directly or use checkboxes for batch multi-row deletion.
+3. **Data Protection**:
+   * Instant `localStorage` synchronization on every keystroke.
+   * Optional 5-second background local disk auto-save via File System Access API.
+   * Re-import previously exported `.xlsx` files with full project state restoration.
+4. **Comprehensive Chemical Resolver**:
+   * Multi-tier lookup via internal database, PubChem PUG REST, PUG View experimental density crawler, and NCI CIR.
+   * Automatic chemical query normalizer to resolve catalysts and alkoxides (e.g., *titanium tetraisopropoxide*, *5% palladium on alumina dry powder*).
 
 ---
 
-## 🌐 Deploy to GitHub Pages
+## 📋 Excel Price Master Upload Template
 
-1. Commit and push `index.html`, `style.css`, `app.js`, and `README.md` to your GitHub repository (`main` branch).
-2. Ensure **Settings > Pages** is pointing to `/ (root)`.
-3. Your web app will automatically build and update within 1–3 minutes.
+Prepare your `.xlsx` or `.csv` rate master with these column headers:
+
+| Name of Raw Material | CAS No | Molecular Weight | Density | Rate/Kg |
+| :--- | :--- | :--- | :--- | :--- |
+| Benzaldehyde | 100-52-7 | 106.12 | 1.044 | 350.00 |
+| Titanium tetraisopropoxide | 546-68-9 | 284.22 | 0.960 | 950.00 |
+| 5% Palladium on alumina | 7440-05-3 | 106.42 | 1.000 | 18500.00 |
+| Toluene | 108-88-3 | 92.14 | 0.867 | 95.00 |
