@@ -9,63 +9,39 @@ const STORAGE_KEY = "PHARMA_RMC_AUTOSAVE_STATE";
 const PRICE_MASTER_STORAGE_KEY = "PHARMA_RMC_PRICE_MASTER";
 
 // -------------------------------------------------------------
-// Comprehensive Process Chemistry & Reagents Knowledgebase
+// Chemical & Catalyst Knowledgebase
 // -------------------------------------------------------------
 const INTERNAL_CHEMICAL_DB = {
-  // Catalysts & Supported Metals
   "palladium on alumina": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
   "pd/al2o3": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
   "palladium on carbon": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
   "pd/c": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
-  "palladium on charcoal": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false },
   "platinum on carbon": { cas: "7440-06-4", mw: 195.08, density: 1.0, isLiquid: false },
   "pt/c": { cas: "7440-06-4", mw: 195.08, density: 1.0, isLiquid: false },
   "raney nickel": { cas: "7440-02-0", mw: 58.69, density: 1.0, isLiquid: false },
   "raney ni": { cas: "7440-02-0", mw: 58.69, density: 1.0, isLiquid: false },
   "palladium acetate": { cas: "3375-31-3", mw: 224.51, density: 1.0, isLiquid: false },
   "pd(oac)2": { cas: "3375-31-3", mw: 224.51, density: 1.0, isLiquid: false },
-  "tetrakis(triphenylphosphine)palladium": { cas: "14221-01-3", mw: 1155.56, density: 1.0, isLiquid: false },
-  "pd(pph3)4": { cas: "14221-01-3", mw: 1155.56, density: 1.0, isLiquid: false },
-  "pd(dppf)cl2": { cas: "72287-26-4", mw: 731.70, density: 1.0, isLiquid: false },
-  "pd(pph3)2cl2": { cas: "13965-03-2", mw: 701.90, density: 1.0, isLiquid: false },
 
-  // Metal Alkoxides, Halides & Lewis Acids
   "titanium tetraisopropoxide": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
   "titanium isopropoxide": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
-  "tetraisopropyl titanate": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
   "ttip": { cas: "546-68-9", mw: 284.22, density: 0.960, isLiquid: true },
   "titanium tetrachloride": { cas: "7550-45-0", mw: 189.68, density: 1.726, isLiquid: true },
-  "ticl4": { cas: "7550-45-0", mw: 189.68, density: 1.726, isLiquid: true },
   "aluminium chloride": { cas: "7446-70-0", mw: 133.34, density: 2.44, isLiquid: false },
-  "alcl3": { cas: "7446-70-0", mw: 133.34, density: 2.44, isLiquid: false },
   "boron tribromide": { cas: "10294-33-4", mw: 250.52, density: 2.65, isLiquid: true },
-  "bbr3": { cas: "10294-33-4", mw: 250.52, density: 2.65, isLiquid: true },
   "boron trifluoride etherate": { cas: "109-63-7", mw: 141.93, density: 1.125, isLiquid: true },
-  "bf3.oet2": { cas: "109-63-7", mw: 141.93, density: 1.125, isLiquid: true },
-  "copper(i) iodide": { cas: "7681-65-4", mw: 190.45, density: 5.62, isLiquid: false },
-  "cui": { cas: "7681-65-4", mw: 190.45, density: 5.62, isLiquid: false },
 
-  // Organometallics & Strong Bases
   "sodium hydride": { cas: "7646-69-7", mw: 24.00, density: 1.20, isLiquid: false },
   "nah": { cas: "7646-69-7", mw: 24.00, density: 1.20, isLiquid: false },
   "n-butyllithium": { cas: "109-72-8", mw: 64.06, density: 0.680, isLiquid: true },
   "nbuli": { cas: "109-72-8", mw: 64.06, density: 0.680, isLiquid: true },
-  "buli": { cas: "109-72-8", mw: 64.06, density: 0.680, isLiquid: true },
   "diisobutylaluminium hydride": { cas: "1191-15-7", mw: 142.22, density: 0.790, isLiquid: true },
   "dibal-h": { cas: "1191-15-7", mw: 142.22, density: 0.790, isLiquid: true },
-  "dibal": { cas: "1191-15-7", mw: 142.22, density: 0.790, isLiquid: true },
   "lithium diisopropylamide": { cas: "4111-54-0", mw: 107.12, density: 0.790, isLiquid: true },
   "lda": { cas: "4111-54-0", mw: 107.12, density: 0.790, isLiquid: true },
   "potassium tert-butoxide": { cas: "865-47-4", mw: 112.21, density: 1.0, isLiquid: false },
-  "kotbu": { cas: "865-47-4", mw: 112.21, density: 1.0, isLiquid: false },
   "sodium tert-butoxide": { cas: "865-48-5", mw: 96.10, density: 1.0, isLiquid: false },
-  "naotbu": { cas: "865-48-5", mw: 96.10, density: 1.0, isLiquid: false },
-  "sodium methoxide": { cas: "124-41-4", mw: 54.02, density: 1.0, isLiquid: false },
-  "naome": { cas: "124-41-4", mw: 54.02, density: 1.0, isLiquid: false },
-  "sodium ethoxide": { cas: "141-52-6", mw: 68.05, density: 1.0, isLiquid: false },
-  "naoet": { cas: "141-52-6", mw: 68.05, density: 1.0, isLiquid: false },
 
-  // Reagents, Halogenating & Coupling Agents
   "thionyl chloride": { cas: "7719-09-7", mw: 118.97, density: 1.638, isLiquid: true },
   "socl2": { cas: "7719-09-7", mw: 118.97, density: 1.638, isLiquid: true },
   "oxalyl chloride": { cas: "79-37-8", mw: 126.93, density: 1.480, isLiquid: true },
@@ -73,29 +49,16 @@ const INTERNAL_CHEMICAL_DB = {
   "pocl3": { cas: "10025-87-3", mw: 153.33, density: 1.645, isLiquid: true },
   "methanesulfonyl chloride": { cas: "124-63-0", mw: 114.55, density: 1.480, isLiquid: true },
   "mscl": { cas: "124-63-0", mw: 114.55, density: 1.480, isLiquid: true },
-  "p-toluenesulfonyl chloride": { cas: "98-59-9", mw: 190.65, density: 1.0, isLiquid: false },
-  "tscl": { cas: "98-59-9", mw: 190.65, density: 1.0, isLiquid: false },
   "1,1'-carbonyldiimidazole": { cas: "530-62-1", mw: 162.15, density: 1.0, isLiquid: false },
   "cdi": { cas: "530-62-1", mw: 162.15, density: 1.0, isLiquid: false },
   "edc hcl": { cas: "25952-53-8", mw: 191.70, density: 1.0, isLiquid: false },
-  "edc.hcl": { cas: "25952-53-8", mw: 191.70, density: 1.0, isLiquid: false },
-  "dcc": { cas: "538-75-0", mw: 206.33, density: 1.0, isLiquid: false },
-  "hobt": { cas: "2592-95-2", mw: 135.12, density: 1.0, isLiquid: false },
   "triethylamine": { cas: "121-44-8", mw: 101.19, density: 0.726, isLiquid: true },
   "tea": { cas: "121-44-8", mw: 101.19, density: 0.726, isLiquid: true },
   "diisopropylethylamine": { cas: "7087-68-5", mw: 129.24, density: 0.755, isLiquid: true },
   "dipea": { cas: "7087-68-5", mw: 129.24, density: 0.755, isLiquid: true },
-  "hunig's base": { cas: "7087-68-5", mw: 129.24, density: 0.755, isLiquid: true },
-  "4-dimethylaminopyridine": { cas: "1122-58-3", mw: 122.17, density: 1.0, isLiquid: false },
-  "dmap": { cas: "1122-58-3", mw: 122.17, density: 1.0, isLiquid: false },
-  "n-bromosuccinimide": { cas: "128-08-5", mw: 177.98, density: 1.0, isLiquid: false },
-  "nbs": { cas: "128-08-5", mw: 177.98, density: 1.0, isLiquid: false },
   "sodium borohydride": { cas: "16940-66-2", mw: 37.83, density: 1.0, isLiquid: false },
   "nabh4": { cas: "16940-66-2", mw: 37.83, density: 1.0, isLiquid: false },
-  "lithium aluminium hydride": { cas: "16853-85-3", mw: 37.95, density: 1.0, isLiquid: false },
-  "lah": { cas: "16853-85-3", mw: 37.95, density: 1.0, isLiquid: false },
 
-  // Solvents & Liquid Acids
   "water": { cas: "7732-18-5", mw: 18.02, density: 1.000, isLiquid: true },
   "methanol": { cas: "67-56-1", mw: 32.04, density: 0.792, isLiquid: true },
   "ethanol": { cas: "64-17-5", mw: 46.07, density: 0.789, isLiquid: true },
@@ -108,7 +71,6 @@ const INTERNAL_CHEMICAL_DB = {
   "toluene": { cas: "108-88-3", mw: 92.14, density: 0.867, isLiquid: true },
   "ethyl acetate": { cas: "141-78-6", mw: 88.11, density: 0.902, isLiquid: true },
   "ea": { cas: "141-78-6", mw: 88.11, density: 0.902, isLiquid: true },
-  "etac": { cas: "141-78-6", mw: 88.11, density: 0.902, isLiquid: true },
   "tetrahydrofuran": { cas: "109-99-9", mw: 72.11, density: 0.886, isLiquid: true },
   "thf": { cas: "109-99-9", mw: 72.11, density: 0.886, isLiquid: true },
   "acetonitrile": { cas: "75-05-8", mw: 41.05, density: 0.786, isLiquid: true },
@@ -118,16 +80,10 @@ const INTERNAL_CHEMICAL_DB = {
   "dimethyl sulfoxide": { cas: "67-68-5", mw: 78.13, density: 1.100, isLiquid: true },
   "dmso": { cas: "67-68-5", mw: 78.13, density: 1.100, isLiquid: true },
   "hexane": { cas: "110-54-3", mw: 86.18, density: 0.655, isLiquid: true },
-  "n-hexane": { cas: "110-54-3", mw: 86.18, density: 0.655, isLiquid: true },
   "heptane": { cas: "142-82-5", mw: 100.20, density: 0.684, isLiquid: true },
-  "n-heptane": { cas: "142-82-5", mw: 100.20, density: 0.684, isLiquid: true },
   "pyridine": { cas: "110-86-1", mw: 79.10, density: 0.982, isLiquid: true },
   "acetic acid": { cas: "64-19-7", mw: 60.05, density: 1.049, isLiquid: true },
-  "trifluoroacetic acid": { cas: "76-05-1", mw: 114.02, density: 1.489, isLiquid: true },
-  "tfa": { cas: "76-05-1", mw: 114.02, density: 1.489, isLiquid: true },
-  "diethyl ether": { cas: "60-29-7", mw: 74.12, density: 0.713, isLiquid: true },
-  "ether": { cas: "60-29-7", mw: 74.12, density: 0.713, isLiquid: true },
-  "chloroform": { cas: "67-66-3", mw: 119.38, density: 1.489, isLiquid: true }
+  "diethyl ether": { cas: "60-29-7", mw: 74.12, density: 0.713, isLiquid: true }
 };
 
 function refreshIcons() {
@@ -243,22 +199,16 @@ function runRetroSyntheticScaling() {
     let prodMW = parseFloat(card.querySelector(".stage-prod-mw").value) || 0;
     let subMW = parseFloat(refRow.querySelector(".mw").value) || 0;
 
-    // Molecular weight fallback heuristics
     if (prodMW <= 0 && subMW > 0) prodMW = subMW;
     if (subMW <= 0 && prodMW > 0) subMW = prodMW;
     if (prodMW <= 0 && subMW <= 0) { prodMW = 100; subMW = 100; }
 
-    // Stage actual output must deliver required quantity for downstream stage / final API
     card.querySelector(".stage-actual-qty").value = requiredNextSubstrateKg.toFixed(2);
 
-    // Moles of Product required
     const prodMolesRequired = (requiredNextSubstrateKg * 1000) / prodMW;
-    // Input Moles of Reference Starting Material needed
     const subMolesRequired = prodMolesRequired / yieldFraction;
-    // Input Mass of Reference Starting Material needed (kg)
     const subKgRequired = (subMolesRequired * subMW) / 1000;
 
-    // Set Sr. No. 1 Quantity
     const refUnit = refRow.querySelector(".unit-select").value;
     const refDensity = parseFloat(refRow.querySelector(".density").value) || 1.0;
 
@@ -268,11 +218,9 @@ function runRetroSyntheticScaling() {
 
     refRow.querySelector(".qty").value = displayQty.toFixed(3);
 
-    // Feed backward into previous stage
     requiredNextSubstrateKg = subKgRequired;
   }
 
-  // Update Top Metrics Banner
   const ksmStage1Kg = requiredNextSubstrateKg;
   const cumYieldPct = cumulativeYieldFraction * 100;
   const stepdownFactor = targetApiBatchKg > 0 ? ksmStage1Kg / targetApiBatchKg : 1.0;
@@ -288,26 +236,470 @@ function runRetroSyntheticScaling() {
 }
 
 // -------------------------------------------------------------
-// 3. Intelligent Chemical Name Normalizer
+// 3. Stage & Material HTML Template Generators with Dual Deletion
+// -------------------------------------------------------------
+function getStageTemplateHTML(stageId, stageTitle) {
+  return `
+    <!-- Stage Header with Option 1 Stage Delete -->
+    <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
+      <div class="flex items-center space-x-2 flex-grow max-w-md">
+        <span class="bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded stage-badge">Stage</span>
+        <input 
+          type="text" 
+          value="${stageTitle}" 
+          class="stage-name-input bg-white font-semibold text-slate-700 text-sm border border-slate-300 rounded px-2 py-1 w-full focus:ring-1 focus:ring-indigo-500 outline-none" 
+          placeholder="Enter Stage Name..."
+          oninput="handleStageNameChange()"
+        />
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Option 2 for RM Delete: Batch Delete Selected (hidden until rows checked) -->
+        <button 
+          id="btnBatchDelete_${stageId}" 
+          onclick="deleteSelectedRows('${stageId}')" 
+          class="hidden bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center shadow transition"
+          title="Option 2: Delete all selected raw material lines"
+        >
+          <i data-lucide="trash" class="w-3.5 h-3.5 mr-1"></i> Delete Selected (<span class="selected-count font-bold">0</span>)
+        </button>
+
+        <button onclick="addMaterialRow('${stageId}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center transition border border-indigo-200">
+          <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> Add Material
+        </button>
+
+        <!-- Option 1 for Stage Delete: Header Action Button -->
+        <button 
+          onclick="removeStage('${stageId}')" 
+          class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center border border-rose-200 transition" 
+          title="Option 1: Delete this stage from header"
+        >
+          <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i> Delete Stage
+        </button>
+      </div>
+    </div>
+
+    <!-- RM Table with Master Selection Checkbox -->
+    <div class="table-scroll">
+      <table class="rmc-table" id="table_${stageId}">
+        <thead>
+          <tr>
+            <!-- Option 2 for RM Delete: Master Checkbox -->
+            <th class="w-8" title="Select all rows for batch deletion">
+              <input type="checkbox" onchange="toggleSelectAllRows('${stageId}', this)" class="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer" />
+            </th>
+            <th>Sr.</th>
+            <th>CAS No.</th>
+            <th style="min-width: 170px;">Name of Raw Material</th>
+            <th>Density<br/>(g/mL)</th>
+            <th>Ratio Type</th>
+            <th>Mole / Vol<br/>Ratio</th>
+            <th>Qty</th>
+            <th>Unit</th>
+            <th>MW<br/>(g/mol)</th>
+            <th>Moles</th>
+            <th>Qty/Kg API</th>
+            <th>% Solvent<br/>Rec.</th>
+            <th>Qty/Kg API<br/>(with Rec.)</th>
+            <th>Rate<br/>(₹/Unit)</th>
+            <th>Cost<br/>(w/o Rec.)</th>
+            <th>Cost<br/>(with Rec.)</th>
+            <th>% Cont.<br/>(w/o Rec.)</th>
+            <th>% Cont.<br/>(with Rec.)</th>
+            <!-- Option 1 for RM Delete: Row Action Header -->
+            <th class="w-14" title="Option 1: Delete individual row">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200"></tbody>
+      </table>
+    </div>
+
+    <!-- Stage Subtotal Summary Strip -->
+    <div class="bg-slate-100/90 px-4 py-2.5 border-t border-b border-slate-200 flex flex-wrap justify-between items-center text-xs">
+      <span class="font-bold text-slate-700 uppercase tracking-wide flex items-center">
+        <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1 text-indigo-600"></i> Stage Cost Subtotals
+      </span>
+      <div class="flex items-center space-x-6">
+        <div>
+          <span class="text-slate-500 font-medium">Stage Cost (w/o Rec.):</span>
+          <span class="stage-subtotal-wo-rec font-bold text-slate-800 ml-1">₹ 0.00</span>
+          <span class="text-[10px] text-slate-400">/kg API</span>
+        </div>
+        <div>
+          <span class="text-emerald-700 font-medium">Stage Cost (with Rec.):</span>
+          <span class="stage-subtotal-w-rec font-bold text-emerald-700 ml-1">₹ 0.00</span>
+          <span class="text-[10px] text-emerald-600">/kg API</span>
+        </div>
+        <div>
+          <span class="text-indigo-700 font-medium">Stage Cost Contribution:</span>
+          <span class="stage-subtotal-cont-rec font-bold text-indigo-800 ml-1">0.00%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yield & Retro-Synthetic Target Control Panel -->
+    <div class="bg-slate-50/80 p-4 space-y-3">
+      <div class="grid grid-cols-1 md:grid-cols-7 gap-3 items-center">
+        <div class="md:col-span-2">
+          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Isolated Product / Intermediate Name</label>
+          <input type="text" class="stage-prod-name w-full border rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white" value="Intermediate Output" oninput="handleStageNameChange()" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Product MW (g/mol)</label>
+          <div class="flex items-center space-x-1">
+            <input type="number" step="any" class="stage-prod-mw w-full border rounded px-2 py-1 text-xs font-semibold text-slate-700 bg-white text-right" value="0" />
+            <button type="button" title="Auto-fetch Product MW online" onclick="fetchProductMWOnline(this)" class="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-600">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-violet-700 uppercase mb-0.5" title="Target/Expected yield used by retro-scaler">Target % Molar Yield</label>
+          <input type="number" step="any" min="1" max="100" class="stage-target-yield w-full border border-violet-300 rounded px-2 py-1 text-xs font-bold text-violet-700 bg-violet-50 text-right" value="85" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Actual Output (kg)</label>
+          <input type="number" step="any" class="stage-actual-qty w-full border rounded px-2 py-1 text-xs font-bold text-indigo-700 bg-white text-right" value="80.00" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-0.5">Theor. Output (kg)</label>
+          <div class="stage-theor-qty text-xs font-bold text-slate-700 py-1 px-2 bg-slate-100 border border-slate-200 rounded text-right">0.00 kg</div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-0.5">% Molar Yield</label>
+          <div class="stage-molar-yield-container">
+            <span class="stage-molar-yield yield-badge yield-med">0.00%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Bottom Strip with Option 2 Stage Delete & Mass Balance -->
+      <div class="pt-2 border-t border-slate-200/60 flex flex-wrap justify-between items-center text-xs text-slate-600 gap-3">
+        <div class="flex items-center space-x-4">
+          <span><strong>Total Mass In:</strong> <span class="stage-mass-in font-bold text-slate-800">0.00 kg</span></span>
+          <span><strong>Recovered Solvents:</strong> <span class="stage-mass-rec font-bold text-emerald-700">0.00 kg</span></span>
+          <span><strong>Unaccounted Loss:</strong> <span class="stage-mass-loss font-bold text-rose-600">0.00 kg</span></span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <span><strong>% w/w Yield:</strong> <span class="stage-ww-yield font-bold text-indigo-700">0.00%</span></span>
+          <span><strong>Stage PMI:</strong> <span class="stage-pmi font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">0.00</span> kg/kg</span>
+
+          <!-- Bonus: Clear All Materials in Stage -->
+          <button 
+            onclick="clearAllMaterialsInStage('${stageId}')" 
+            class="text-slate-600 hover:text-slate-800 font-medium px-2 py-1 rounded hover:bg-slate-200 text-[11px] transition flex items-center border border-slate-300"
+            title="Remove all materials except reference material"
+          >
+            <i data-lucide="eraser" class="w-3 h-3 mr-1"></i> Clear Materials
+          </button>
+
+          <!-- Option 2 for Stage Delete: Footer Control Action -->
+          <button 
+            onclick="removeStage('${stageId}')" 
+            class="text-rose-600 hover:text-rose-800 font-semibold px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-[11px] transition flex items-center border border-rose-200"
+            title="Option 2: Delete this entire stage from stage control panel"
+          >
+            <i data-lucide="folder-x" class="w-3 h-3 mr-1"></i> Delete This Stage
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getMaterialRowHTML(isFirstRow, rowCount) {
+  return `
+    <!-- Option 2 for RM Delete: Individual Row Checkbox -->
+    <td class="text-center">
+      <input 
+        type="checkbox" 
+        class="row-select-cb w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer" 
+        onchange="updateBatchDeleteBtn(this)" 
+        ${isFirstRow ? 'data-is-ref="true" title="Reference Substrate"' : 'title="Select for batch delete"'} 
+      />
+    </td>
+    <td class="text-center font-bold text-slate-500 sr-no">${rowCount}</td>
+    <td><input type="text" class="cas-no w-24" placeholder="CAS No." /></td>
+    <td>
+      <div class="flex items-center space-x-1">
+        <input 
+          type="text" 
+          list="rmMasterList" 
+          class="rm-name w-40 font-medium" 
+          placeholder="Select/Enter RM" 
+        />
+        <button 
+          type="button" 
+          title="Auto-fetch CAS, MW & Density online" 
+          onclick="fetchOnlineChemData(this, this.previousElementSibling)" 
+          class="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition"
+        >
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </td>
+    <td><input type="number" step="any" class="density w-16 text-right" value="1.0" /></td>
+    <td>
+      <select class="ratio-type text-xs">
+        <option value="mole">Mole Ratio</option>
+        <option value="volume">Vol Ratio (V/W)</option>
+      </select>
+    </td>
+    <td>
+      <input 
+        type="number" 
+        step="any" 
+        class="mole-vol-ratio w-16 text-right ${isFirstRow ? 'bg-slate-100 font-bold text-slate-600' : ''}" 
+        value="1.00" 
+        ${isFirstRow ? 'readonly title="Fixed at 1.00 (Reference Substrate)"' : ''} 
+      />
+    </td>
+    <td>
+      <input 
+        type="number" 
+        step="any" 
+        class="qty w-20 text-right font-medium ${!isFirstRow ? 'calc-highlight' : ''}" 
+        value="${isFirstRow ? '100' : '0'}" 
+      />
+    </td>
+    <td>
+      <select class="unit-select text-xs font-semibold">
+        <option value="kg" selected>Kg</option>
+        <option value="L">L</option>
+        <option value="g">g</option>
+      </select>
+    </td>
+    <td><input type="number" step="any" class="mw w-16 text-right" value="0" /></td>
+    <td class="read-only-cell moles">0.00</td>
+    <td class="read-only-cell qty-per-kg">0.0000</td>
+    <td><input type="number" step="any" class="rec-percent w-14 text-right" value="0" min="0" max="100" /></td>
+    <td class="read-only-cell qty-per-kg-rec">0.0000</td>
+    <td><input type="number" step="any" class="rate w-16 text-right font-medium" value="0" /></td>
+    <td class="read-only-cell cost-wo-rec">0.00</td>
+    <td class="read-only-cell cost-w-rec">0.00</td>
+    <td class="read-only-cell cont-wo-rec">0.00%</td>
+    <td class="read-only-cell cont-w-rec">0.00%</td>
+    <!-- Option 1 for RM Delete: Individual Row Action Button -->
+    <td class="text-center">
+      ${isFirstRow 
+        ? '<span class="text-xs text-slate-300 font-bold" title="Reference Substrate">Ref</span>' 
+        : '<button onclick="removeRow(this)" class="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition" title="Option 1: Delete this raw material line"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>'
+      }
+    </td>
+  `;
+}
+
+// -------------------------------------------------------------
+// 4. Stage Operations & Stage Deletion (Options 1 & 2)
+// -------------------------------------------------------------
+function addNewStage(defaultStageName) {
+  stageCount++;
+  const stageId = `stage_${Date.now()}_${stageCount}`;
+  const container = document.getElementById("stagesContainer");
+
+  const stageCard = document.createElement("div");
+  stageCard.className = "bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden stage-card";
+  stageCard.id = stageId;
+
+  stageCard.innerHTML = getStageTemplateHTML(stageId, defaultStageName);
+  container.appendChild(stageCard);
+
+  addMaterialRow(stageId);
+  updateStageNumbersAndCascade(false);
+  refreshIcons();
+}
+
+// Unified Handler for Option 1 (Header button) and Option 2 (Footer button)
+function removeStage(stageId) {
+  const stage = document.getElementById(stageId);
+  if (!stage) return;
+
+  const stageName = stage.querySelector(".stage-name-input")?.value || "this stage";
+  const confirmed = confirm(`Are you sure you want to delete ${stageName}?\nThis action will re-calculate downstream stoichiometry and yields.`);
+  
+  if (confirmed) {
+    stage.remove();
+    updateStageNumbersAndCascade(false);
+    conditionalAutoRetroScale();
+    recalculateAll();
+    saveStateToLocalStorage();
+  }
+}
+
+// Helper: Clear all materials in stage except Reference Row 1
+function clearAllMaterialsInStage(stageId) {
+  const stage = document.getElementById(stageId);
+  if (!stage) return;
+
+  const rows = stage.querySelectorAll("tbody tr");
+  if (rows.length <= 1) return;
+
+  if (confirm("Clear all raw materials in this stage (keeping only Reference Material)?")) {
+    for (let i = rows.length - 1; i > 0; i--) {
+      rows[i].remove();
+    }
+    recalculateAll();
+    saveStateToLocalStorage();
+    refreshIcons();
+  }
+}
+
+// -------------------------------------------------------------
+// 5. Raw Material Line Operations & RM Deletion (Options 1 & 2)
+// -------------------------------------------------------------
+function addMaterialRow(stageId) {
+  const tbody = document.querySelector(`#table_${stageId} tbody`);
+  const rowCount = tbody.children.length + 1;
+  const row = document.createElement("tr");
+
+  row.innerHTML = getMaterialRowHTML(rowCount === 1, rowCount);
+  tbody.appendChild(row);
+
+  updateStageNumbersAndCascade(false);
+  refreshIcons();
+}
+
+// Option 1: Inline Row Delete
+function removeRow(btn) {
+  const row = btn.closest("tr");
+  const tbody = row.closest("tbody");
+  const stageCard = row.closest(".stage-card");
+  const stageId = stageCard.id;
+
+  row.remove();
+
+  // Reset Serial Numbers
+  Array.from(tbody.querySelectorAll(".sr-no")).forEach((td, index) => {
+    td.innerText = index + 1;
+  });
+
+  updateBatchDeleteBtnFromStageId(stageId);
+  recalculateAll();
+  saveStateToLocalStorage();
+}
+
+// Option 2: Checkbox Multi-Select Batch Delete Handlers
+function toggleSelectAllRows(stageId, masterCheckbox) {
+  const stage = document.getElementById(stageId);
+  if (!stage) return;
+
+  const checkboxes = stage.querySelectorAll("tbody .row-select-cb");
+  checkboxes.forEach((cb) => {
+    // Only select non-reference rows for deletion
+    if (cb.dataset.isRef !== "true") {
+      cb.checked = masterCheckbox.checked;
+      const tr = cb.closest("tr");
+      if (masterCheckbox.checked) tr.classList.add("row-selected");
+      else tr.classList.remove("row-selected");
+    }
+  });
+
+  updateBatchDeleteBtnFromStageId(stageId);
+}
+
+function updateBatchDeleteBtn(checkboxElement) {
+  const tr = checkboxElement.closest("tr");
+  if (checkboxElement.checked) tr.classList.add("row-selected");
+  else tr.classList.remove("row-selected");
+
+  const stageCard = checkboxElement.closest(".stage-card");
+  if (stageCard) {
+    updateBatchDeleteBtnFromStageId(stageCard.id);
+  }
+}
+
+function updateBatchDeleteBtnFromStageId(stageId) {
+  const stage = document.getElementById(stageId);
+  if (!stage) return;
+
+  const checkedCount = stage.querySelectorAll("tbody .row-select-cb:checked:not([data-is-ref='true'])").length;
+  const btnBatch = document.getElementById(`btnBatchDelete_${stageId}`);
+  
+  if (btnBatch) {
+    if (checkedCount > 0) {
+      btnBatch.classList.remove("hidden");
+      btnBatch.querySelector(".selected-count").innerText = checkedCount;
+    } else {
+      btnBatch.classList.add("hidden");
+    }
+  }
+}
+
+// Option 2 Action: Delete All Selected Rows
+function deleteSelectedRows(stageId) {
+  const stage = document.getElementById(stageId);
+  if (!stage) return;
+
+  const checkedBoxes = stage.querySelectorAll("tbody .row-select-cb:checked:not([data-is-ref='true'])");
+  if (checkedBoxes.length === 0) return;
+
+  if (confirm(`Delete ${checkedBoxes.length} selected raw material line(s)?`)) {
+    checkedBoxes.forEach((cb) => {
+      const row = cb.closest("tr");
+      if (row) row.remove();
+    });
+
+    const tbody = stage.querySelector("tbody");
+    Array.from(tbody.querySelectorAll(".sr-no")).forEach((td, index) => {
+      td.innerText = index + 1;
+    });
+
+    // Reset Master Checkbox
+    const masterCb = stage.querySelector("thead input[type='checkbox']");
+    if (masterCb) masterCb.checked = false;
+
+    updateBatchDeleteBtnFromStageId(stageId);
+    recalculateAll();
+    saveStateToLocalStorage();
+  }
+}
+
+function updateStageNumbersAndCascade(preserveExisting = false) {
+  const stageCards = document.querySelectorAll(".stage-card");
+  stageCards.forEach((card, index) => {
+    const stageNum = index + 1;
+    card.querySelector(".stage-badge").innerText = `Stage ${stageNum}`;
+
+    const firstRow = card.querySelector("tbody tr:first-child");
+    if (firstRow && index > 0 && !preserveExisting) {
+      const rmInput = firstRow.querySelector(".rm-name");
+      const mwInput = firstRow.querySelector(".mw");
+      const qtyInput = firstRow.querySelector(".qty");
+
+      const prevCard = stageCards[index - 1];
+      const prevProdName = prevCard.querySelector(".stage-prod-name").value.trim() || `Intermediate Stage-${index}`;
+      const prevProdMW = parseFloat(prevCard.querySelector(".stage-prod-mw").value) || 0;
+      const prevActualQty = parseFloat(prevCard.querySelector(".stage-actual-qty").value) || 0;
+
+      rmInput.value = prevProdName;
+      if (prevProdMW > 0 && parseFloat(mwInput.value) === 0) mwInput.value = prevProdMW;
+      if (prevActualQty > 0 && parseFloat(qtyInput.value) === 0) qtyInput.value = prevActualQty;
+    }
+  });
+}
+
+function handleStageNameChange() {
+  updateStageNumbersAndCascade(false);
+  conditionalAutoRetroScale();
+  recalculateAll();
+  saveStateToLocalStorage();
+}
+
+// -------------------------------------------------------------
+// 6. Online PubChem & CIR Chemical Resolver
 // -------------------------------------------------------------
 function normalizeChemicalQuery(raw) {
   if (!raw) return "";
   let s = String(raw).trim();
-
-  // Strip percentages & molarities
   s = s.replace(/^\s*\d+(\.\d+)?\s*%\s*(w\/w|v\/v|wt)?\s*/i, "");
   s = s.replace(/\s*\d+(\.\d+)?\s*%\s*(w\/w|v\/v|wt)?/gi, "");
   s = s.replace(/\s*\d+(\.\d+)?\s*M\s*(in\s+[a-z0-9]+)?/gi, "");
-
-  // Strip descriptors
   s = s.replace(/\b(dry powder|wet powder|powder|dry basis|wet basis|floc|flakes|pellets|beads|granules|slurry|dispersion in mineral oil|in mineral oil|in oil|reagent grade|tech grade|technical grade|extra pure|pure|anhydrous|concentrated|conc\.|conc|aqueous|aq\.|aq)\b/gi, "");
   s = s.replace(/[(),]/g, " ").replace(/\s+/g, " ").trim();
   return s;
 }
 
-// -------------------------------------------------------------
-// 4. Multi-Tier Online Chemical Resolver
-// -------------------------------------------------------------
 async function fetchOnlineChemData(btn, inputElement) {
   const row = inputElement.closest("tr");
   const rawName = inputElement.value.trim();
@@ -327,7 +719,6 @@ async function fetchOnlineChemData(btn, inputElement) {
   let foundDensity = 0;
 
   try {
-    // TIER 1: In-App Knowledgebase
     const dbKeyRaw = rawName.toLowerCase();
     const dbKeyClean = cleanName.toLowerCase();
     const matchedDB = INTERNAL_CHEMICAL_DB[dbKeyClean] || INTERNAL_CHEMICAL_DB[dbKeyRaw];
@@ -338,12 +729,9 @@ async function fetchOnlineChemData(btn, inputElement) {
       foundDensity = matchedDB.density || 0;
     }
 
-    // TIER 2: PubChem
     if (!foundCAS || foundMW === 0 || foundDensity === 0) {
       let cid = null;
-      const searchTerms = [cleanName, rawName];
-
-      for (const term of searchTerms) {
+      for (const term of [cleanName, rawName]) {
         if (!term || cid) continue;
         try {
           const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(term)}/cids/JSON`);
@@ -354,25 +742,7 @@ async function fetchOnlineChemData(btn, inputElement) {
         } catch (e) {}
       }
 
-      if (!cid) {
-        try {
-          const autoRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(cleanName)}/json?limit=1`);
-          if (autoRes.ok) {
-            const autoData = await autoRes.json();
-            const candidate = autoData?.dictionary_terms?.compound?.[0];
-            if (candidate) {
-              const cidRes2 = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(candidate)}/cids/JSON`);
-              if (cidRes2.ok) {
-                const cidData2 = await cidRes2.json();
-                cid = cidData2?.IdentifierList?.CID?.[0] || null;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
       if (cid) {
-        // Molecular Weight
         if (foundMW === 0) {
           try {
             const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/MolecularWeight/JSON`);
@@ -383,57 +753,27 @@ async function fetchOnlineChemData(btn, inputElement) {
           } catch (e) {}
         }
 
-        // CAS Number via Synonyms
         if (!foundCAS) {
           try {
             const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`);
             if (synRes.ok) {
               const synData = await synRes.json();
               const synonyms = synData?.InformationList?.Information?.[0]?.Synonym || [];
-              const casRegex = /^[1-9]\d{1,6}-\d{2}-\d$/;
-              const match = synonyms.find((item) => casRegex.test(item.trim()));
+              const match = synonyms.find((item) => /^[1-9]\d{1,6}-\d{2}-\d$/.test(item.trim()));
               if (match) foundCAS = match.trim();
             }
           } catch (e) {}
         }
 
-        // Experimental Density via PubChem PUG View
         if (foundDensity === 0) {
           foundDensity = await fetchDensityFromPubChemPUGView(cid);
         }
       }
     }
 
-    // TIER 3: NCI CIR Fallback
-    if (!foundCAS || foundMW === 0) {
-      try {
-        if (!foundCAS) {
-          const cactusCas = await fetch(`https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(cleanName)}/cas`);
-          if (cactusCas.ok) {
-            const txt = (await cactusCas.text()).trim();
-            if (/^[1-9]\d{1,6}-\d{2}-\d$/.test(txt)) foundCAS = txt;
-          }
-        }
-        if (foundMW === 0) {
-          const cactusMW = await fetch(`https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(cleanName)}/mw`);
-          if (cactusMW.ok) {
-            const val = parseFloat(await cactusMW.text());
-            if (val > 0) foundMW = val;
-          }
-        }
-      } catch (e) {}
-    }
-
-    // Apply Values
     let appliedCount = 0;
-    if (foundCAS) {
-      row.querySelector(".cas-no").value = foundCAS;
-      appliedCount++;
-    }
-    if (foundMW > 0) {
-      row.querySelector(".mw").value = foundMW.toFixed(2);
-      appliedCount++;
-    }
+    if (foundCAS) { row.querySelector(".cas-no").value = foundCAS; appliedCount++; }
+    if (foundMW > 0) { row.querySelector(".mw").value = foundMW.toFixed(2); appliedCount++; }
     if (foundDensity > 0) {
       row.querySelector(".density").value = foundDensity.toFixed(3);
       appliedCount++;
@@ -456,7 +796,7 @@ async function fetchOnlineChemData(btn, inputElement) {
     }
 
   } catch (err) {
-    console.error("Chemical Resolver Error:", err);
+    console.error("Resolver Error:", err);
     alert("Online resolver lookup failed. Please enter details manually.");
   } finally {
     btn.innerHTML = originalIcon;
@@ -508,14 +848,47 @@ async function fetchDensityFromPubChemPUGView(cid) {
         if (val > 0.1 && val < 30) return val;
       }
     }
-  } catch (e) {
-    console.warn("PUG View parse error:", e);
-  }
+  } catch (e) {}
   return 0;
 }
 
+async function fetchProductMWOnline(btn) {
+  const card = btn.closest(".stage-card");
+  const prodName = card.querySelector(".stage-prod-name").value.trim();
+  if (!prodName) {
+    alert("Please enter intermediate product name.");
+    return;
+  }
+
+  const cleanName = normalizeChemicalQuery(prodName);
+  const originalIcon = btn.innerHTML;
+  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
+  refreshIcons();
+
+  try {
+    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(cleanName)}/property/MolecularWeight/JSON`);
+    if (propRes.ok) {
+      const propData = await propRes.json();
+      const mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
+      if (mw > 0) {
+        card.querySelector(".stage-prod-mw").value = parseFloat(mw).toFixed(2);
+        conditionalAutoRetroScale();
+        recalculateAll();
+        saveStateToLocalStorage();
+      }
+    } else {
+      alert(`No online record found for "${prodName}".`);
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    btn.innerHTML = originalIcon;
+    refreshIcons();
+  }
+}
+
 // -------------------------------------------------------------
-// 5. Excel Price Master Parser & Autocomplete
+// 7. Excel Price Master Parser & Autocomplete
 // -------------------------------------------------------------
 function cleanHeader(headerStr) {
   if (!headerStr) return "";
@@ -621,9 +994,7 @@ function loadPriceMasterFromCache() {
         document.getElementById("uploadLabel").innerText = `Loaded (${count} items)`;
       }
     }
-  } catch (e) {
-    console.warn("Could not load price master cache:", e);
-  }
+  } catch (e) {}
 }
 
 function renderDatalist() {
@@ -633,7 +1004,7 @@ function renderDatalist() {
   Object.values(priceMaster).forEach((item) => {
     const opt = document.createElement("option");
     opt.value = item.name;
-    opt.label = `Rate: ₹${item.rate}/kg${item.cas ? '| CAS: ' + item.cas : ''}`;
+    opt.label = `Rate: ₹${item.rate}/kg ${item.cas ? '| CAS: ' + item.cas : ''}`;
     dataList.appendChild(opt);
   });
 }
@@ -646,7 +1017,6 @@ function autoFillRM(input) {
   const lowerVal = rawVal.toLowerCase();
   const cleanVal = normalizeChemicalQuery(rawVal).toLowerCase();
 
-  // Match in Price Master
   if (priceMaster[lowerVal] || priceMaster[cleanVal]) {
     const item = priceMaster[lowerVal] || priceMaster[cleanVal];
     if (item.cas) row.querySelector(".cas-no").value = item.cas;
@@ -655,7 +1025,6 @@ function autoFillRM(input) {
     if (item.rate > 0) row.querySelector(".rate").value = item.rate;
   }
 
-  // Match in Internal Knowledgebase
   const dbMatch = INTERNAL_CHEMICAL_DB[lowerVal] || INTERNAL_CHEMICAL_DB[cleanVal];
   if (dbMatch) {
     if (!row.querySelector(".cas-no").value && dbMatch.cas) row.querySelector(".cas-no").value = dbMatch.cas;
@@ -671,7 +1040,7 @@ function autoFillRM(input) {
 }
 
 // -------------------------------------------------------------
-// 6. Persistent Local Storage
+// 8. Persistent Local Storage
 // -------------------------------------------------------------
 function getSerializedProjectState() {
   const state = {
@@ -724,9 +1093,7 @@ function saveStateToLocalStorage() {
       indicator.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i> Auto-saved at ${timeStr}`;
       refreshIcons();
     }
-  } catch (err) {
-    console.error("LocalStorage save failed:", err);
-  }
+  } catch (err) {}
 }
 
 function loadProjectFromLocalStorage() {
@@ -736,7 +1103,6 @@ function loadProjectFromLocalStorage() {
     const state = JSON.parse(raw);
     return applyProjectState(state);
   } catch (err) {
-    console.error("Failed to restore from LocalStorage:", err);
     return false;
   }
 }
@@ -809,7 +1175,7 @@ function resetProject() {
 }
 
 // -------------------------------------------------------------
-// 7. Background 5-Second Local Disk Auto-Save & Sync
+// 9. Background 5-Second Local Disk Auto-Save & Sync
 // -------------------------------------------------------------
 async function handleFiveSecondAutoSave() {
   saveStateToLocalStorage();
@@ -826,9 +1192,7 @@ async function handleFiveSecondAutoSave() {
 
       const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       document.getElementById("syncBtnLabel").innerText = `Disk Synced (${timeStr})`;
-    } catch (err) {
-      console.warn("Background local disk sync warning:", err);
-    }
+    } catch (err) {}
   }
 }
 
@@ -851,327 +1215,11 @@ async function linkLocalDiskFile() {
     document.getElementById("syncBtnLabel").innerText = "Linked: Saving every 5s";
     document.getElementById("btnLinkLocalFile").classList.replace("bg-slate-800", "bg-emerald-800");
     handleFiveSecondAutoSave();
-  } catch (err) {
-    console.log("File link cancelled by user.");
-  }
+  } catch (err) {}
 }
 
 // -------------------------------------------------------------
-// 8. Stage & Material HTML Template Generators
-// -------------------------------------------------------------
-function getStageTemplateHTML(stageId, stageTitle) {
-  return `
-    <div class="bg-slate-100 px-4 py-3 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
-      <div class="flex items-center space-x-2 flex-grow max-w-md">
-        <span class="bg-indigo-600 text-white text-xs font-bold px-2 py-1 rounded stage-badge">Stage</span>
-        <input 
-          type="text" 
-          value="${stageTitle}" 
-          class="stage-name-input bg-white font-semibold text-slate-700 text-sm border border-slate-300 rounded px-2 py-1 w-full focus:ring-1 focus:ring-indigo-500 outline-none" 
-          placeholder="Enter Stage Name..."
-          oninput="handleStageNameChange()"
-        />
-      </div>
-      <div class="flex items-center space-x-2">
-        <button onclick="addMaterialRow('${stageId}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center transition">
-          <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> Add Material
-        </button>
-        <button onclick="removeStage('${stageId}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded transition">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
-        </button>
-      </div>
-    </div>
-
-    <div class="table-scroll">
-      <table class="rmc-table" id="table_${stageId}">
-        <thead>
-          <tr>
-            <th>Sr.</th>
-            <th>CAS No.</th>
-            <th style="min-width: 170px;">Name of Raw Material</th>
-            <th>Density<br/>(g/mL)</th>
-            <th>Ratio Type</th>
-            <th>Mole / Vol<br/>Ratio</th>
-            <th>Qty</th>
-            <th>Unit</th>
-            <th>MW<br/>(g/mol)</th>
-            <th>Moles</th>
-            <th>Qty/Kg API</th>
-            <th>% Solvent<br/>Rec.</th>
-            <th>Qty/Kg API<br/>(with Rec.)</th>
-            <th>Rate<br/>(₹/Unit)</th>
-            <th>Cost<br/>(w/o Rec.)</th>
-            <th>Cost<br/>(with Rec.)</th>
-            <th>% Cont.<br/>(w/o Rec.)</th>
-            <th>% Cont.<br/>(with Rec.)</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200"></tbody>
-      </table>
-    </div>
-
-    <div class="bg-slate-100/90 px-4 py-2.5 border-t border-b border-slate-200 flex flex-wrap justify-between items-center text-xs">
-      <span class="font-bold text-slate-700 uppercase tracking-wide flex items-center">
-        <i data-lucide="calculator" class="w-3.5 h-3.5 mr-1 text-indigo-600"></i> Stage Cost Subtotals
-      </span>
-      <div class="flex items-center space-x-6">
-        <div>
-          <span class="text-slate-500 font-medium">Stage Cost (w/o Rec.):</span>
-          <span class="stage-subtotal-wo-rec font-bold text-slate-800 ml-1">₹ 0.00</span>
-          <span class="text-[10px] text-slate-400">/kg API</span>
-        </div>
-        <div>
-          <span class="text-emerald-700 font-medium">Stage Cost (with Rec.):</span>
-          <span class="stage-subtotal-w-rec font-bold text-emerald-700 ml-1">₹ 0.00</span>
-          <span class="text-[10px] text-emerald-600">/kg API</span>
-        </div>
-        <div>
-          <span class="text-indigo-700 font-medium">Stage Cost Contribution:</span>
-          <span class="stage-subtotal-cont-rec font-bold text-indigo-800 ml-1">0.00%</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-slate-50/80 p-4 space-y-3">
-      <div class="grid grid-cols-1 md:grid-cols-7 gap-3 items-center">
-        <div class="md:col-span-2">
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Isolated Product / Intermediate Name</label>
-          <input type="text" class="stage-prod-name w-full border rounded px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white" value="Intermediate Output" oninput="handleStageNameChange()" />
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Product MW (g/mol)</label>
-          <div class="flex items-center space-x-1">
-            <input type="number" step="any" class="stage-prod-mw w-full border rounded px-2 py-1 text-xs font-semibold text-slate-700 bg-white text-right" value="0" />
-            <button type="button" title="Auto-fetch Product MW online" onclick="fetchProductMWOnline(this)" class="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-600">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-violet-700 uppercase mb-0.5" title="Target/Expected yield used by retro-scaler">Target % Molar Yield</label>
-          <input type="number" step="any" min="1" max="100" class="stage-target-yield w-full border border-violet-300 rounded px-2 py-1 text-xs font-bold text-violet-700 bg-violet-50 text-right" value="85" />
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-0.5">Actual Output (kg)</label>
-          <input type="number" step="any" class="stage-actual-qty w-full border rounded px-2 py-1 text-xs font-bold text-indigo-700 bg-white text-right" value="80.00" />
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-0.5">Theor. Output (kg)</label>
-          <div class="stage-theor-qty text-xs font-bold text-slate-700 py-1 px-2 bg-slate-100 border border-slate-200 rounded text-right">0.00 kg</div>
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase mb-0.5">% Molar Yield</label>
-          <div class="stage-molar-yield-container">
-            <span class="stage-molar-yield yield-badge yield-med">0.00%</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-slate-200/60 flex flex-wrap justify-between items-center text-xs text-slate-600 gap-3">
-        <div class="flex items-center space-x-4">
-          <span><strong>Total Mass In:</strong> <span class="stage-mass-in font-bold text-slate-800">0.00 kg</span></span>
-          <span><strong>Recovered Solvents:</strong> <span class="stage-mass-rec font-bold text-emerald-700">0.00 kg</span></span>
-          <span><strong>Unaccounted Loss:</strong> <span class="stage-mass-loss font-bold text-rose-600">0.00 kg</span></span>
-        </div>
-        <div class="flex items-center space-x-4">
-          <span><strong>% w/w Yield:</strong> <span class="stage-ww-yield font-bold text-indigo-700">0.00%</span></span>
-          <span><strong>Stage PMI:</strong> <span class="stage-pmi font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">0.00</span> kg/kg</span>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function getMaterialRowHTML(isFirstRow, rowCount) {
-  return `
-    <td class="text-center font-bold text-slate-500 sr-no">${rowCount}</td>
-    <td><input type="text" class="cas-no w-24" placeholder="CAS No." /></td>
-    <td>
-      <div class="flex items-center space-x-1">
-        <input 
-          type="text" 
-          list="rmMasterList" 
-          class="rm-name w-40 font-medium" 
-          placeholder="Select/Enter RM" 
-        />
-        <button 
-          type="button" 
-          title="Auto-fetch CAS, MW & Density online" 
-          onclick="fetchOnlineChemData(this, this.previousElementSibling)" 
-          class="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition"
-        >
-          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-        </button>
-      </div>
-    </td>
-    <td><input type="number" step="any" class="density w-16 text-right" value="1.0" /></td>
-    <td>
-      <select class="ratio-type text-xs">
-        <option value="mole">Mole Ratio</option>
-        <option value="volume">Vol Ratio (V/W)</option>
-      </select>
-    </td>
-    <td>
-      <input 
-        type="number" 
-        step="any" 
-        class="mole-vol-ratio w-16 text-right ${isFirstRow ? 'bg-slate-100 font-bold text-slate-600' : ''}" 
-        value="1.00" 
-        ${isFirstRow ? 'readonly title="Fixed at 1.00 (Reference Substrate)"' : ''} 
-      />
-    </td>
-    <td>
-      <input 
-        type="number" 
-        step="any" 
-        class="qty w-20 text-right font-medium ${!isFirstRow ? 'calc-highlight' : ''}" 
-        value="${isFirstRow ? '100' : '0'}" 
-      />
-    </td>
-    <td>
-      <select class="unit-select text-xs font-semibold">
-        <option value="kg" selected>Kg</option>
-        <option value="L">L</option>
-        <option value="g">g</option>
-      </select>
-    </td>
-    <td><input type="number" step="any" class="mw w-16 text-right" value="0" /></td>
-    <td class="read-only-cell moles">0.00</td>
-    <td class="read-only-cell qty-per-kg">0.0000</td>
-    <td><input type="number" step="any" class="rec-percent w-14 text-right" value="0" min="0" max="100" /></td>
-    <td class="read-only-cell qty-per-kg-rec">0.0000</td>
-    <td><input type="number" step="any" class="rate w-16 text-right font-medium" value="0" /></td>
-    <td class="read-only-cell cost-wo-rec">0.00</td>
-    <td class="read-only-cell cost-w-rec">0.00</td>
-    <td class="read-only-cell cont-wo-rec">0.00%</td>
-    <td class="read-only-cell cont-w-rec">0.00%</td>
-    <td class="text-center">
-      ${isFirstRow ? '<span class="text-xs text-slate-300">Ref</span>' : '<button onclick="removeRow(this)" class="text-slate-400 hover:text-rose-600 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>'}
-    </td>
-  `;
-}
-
-function addNewStage(defaultStageName) {
-  stageCount++;
-  const stageId = `stage_${Date.now()}_${stageCount}`;
-  const container = document.getElementById("stagesContainer");
-
-  const stageCard = document.createElement("div");
-  stageCard.className = "bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden stage-card";
-  stageCard.id = stageId;
-
-  stageCard.innerHTML = getStageTemplateHTML(stageId, defaultStageName);
-  container.appendChild(stageCard);
-
-  addMaterialRow(stageId);
-  updateStageNumbersAndCascade(false);
-  refreshIcons();
-}
-
-function removeStage(stageId) {
-  const stage = document.getElementById(stageId);
-  if (stage) {
-    stage.remove();
-    updateStageNumbersAndCascade(false);
-    conditionalAutoRetroScale();
-    recalculateAll();
-    saveStateToLocalStorage();
-  }
-}
-
-function addMaterialRow(stageId) {
-  const tbody = document.querySelector(`#table_${stageId} tbody`);
-  const rowCount = tbody.children.length + 1;
-  const row = document.createElement("tr");
-
-  row.innerHTML = getMaterialRowHTML(rowCount === 1, rowCount);
-  tbody.appendChild(row);
-
-  updateStageNumbersAndCascade(false);
-  refreshIcons();
-}
-
-function removeRow(btn) {
-  const row = btn.closest("tr");
-  const tbody = row.closest("tbody");
-  row.remove();
-
-  Array.from(tbody.querySelectorAll(".sr-no")).forEach((td, index) => {
-    td.innerText = index + 1;
-  });
-  recalculateAll();
-  saveStateToLocalStorage();
-}
-
-function updateStageNumbersAndCascade(preserveExisting = false) {
-  const stageCards = document.querySelectorAll(".stage-card");
-  stageCards.forEach((card, index) => {
-    const stageNum = index + 1;
-    card.querySelector(".stage-badge").innerText = `Stage ${stageNum}`;
-
-    const firstRow = card.querySelector("tbody tr:first-child");
-    if (firstRow && index > 0 && !preserveExisting) {
-      const rmInput = firstRow.querySelector(".rm-name");
-      const mwInput = firstRow.querySelector(".mw");
-      const qtyInput = firstRow.querySelector(".qty");
-
-      const prevCard = stageCards[index - 1];
-      const prevProdName = prevCard.querySelector(".stage-prod-name").value.trim() || `Intermediate Stage-${index}`;
-      const prevProdMW = parseFloat(prevCard.querySelector(".stage-prod-mw").value) || 0;
-      const prevActualQty = parseFloat(prevCard.querySelector(".stage-actual-qty").value) || 0;
-
-      rmInput.value = prevProdName;
-      if (prevProdMW > 0 && parseFloat(mwInput.value) === 0) mwInput.value = prevProdMW;
-      if (prevActualQty > 0 && parseFloat(qtyInput.value) === 0) qtyInput.value = prevActualQty;
-    }
-  });
-}
-
-function handleStageNameChange() {
-  updateStageNumbersAndCascade(false);
-  conditionalAutoRetroScale();
-  recalculateAll();
-  saveStateToLocalStorage();
-}
-
-async function fetchProductMWOnline(btn) {
-  const card = btn.closest(".stage-card");
-  const prodName = card.querySelector(".stage-prod-name").value.trim();
-  if (!prodName) {
-    alert("Please enter intermediate product name.");
-    return;
-  }
-
-  const cleanName = normalizeChemicalQuery(prodName);
-  const originalIcon = btn.innerHTML;
-  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
-  refreshIcons();
-
-  try {
-    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(cleanName)}/property/MolecularWeight/JSON`);
-    if (propRes.ok) {
-      const propData = await propRes.json();
-      const mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
-      if (mw > 0) {
-        card.querySelector(".stage-prod-mw").value = parseFloat(mw).toFixed(2);
-        conditionalAutoRetroScale();
-        recalculateAll();
-        saveStateToLocalStorage();
-      }
-    } else {
-      alert(`No online record found for "${prodName}".`);
-    }
-  } catch (err) {
-    console.error(err);
-  } finally {
-    btn.innerHTML = originalIcon;
-    refreshIcons();
-  }
-}
-
-// -------------------------------------------------------------
-// 9. Forward Stoichiometry, Yield & Cost Engine
+// 10. Forward Stoichiometry, Yield & Cost Engine
 // -------------------------------------------------------------
 function recalculateAll() {
   const apiBatchSize = parseFloat(document.getElementById("apiBatchSize").value) || 1;
@@ -1205,7 +1253,6 @@ function recalculateAll() {
     let stageSubtotalWoRec = 0;
     let stageSubtotalWRec = 0;
 
-    // Rows
     rows.forEach((row, index) => {
       const isFirst = index === 0;
       const unit = row.querySelector(".unit-select").value;
@@ -1324,7 +1371,7 @@ function recalculateAll() {
 }
 
 // -------------------------------------------------------------
-// 10. Excel Import/Export Handling
+// 11. Excel Import/Export Handling
 // -------------------------------------------------------------
 function buildWorkbookFromState(state) {
   const wb = XLSX.utils.book_new();
@@ -1345,10 +1392,10 @@ function buildWorkbookFromState(state) {
 
     exportData.push({ "Stage / Material": `=== ${stageName.toUpperCase()} ===` });
     exportData.push({
-      "Stage / Material": `Product: ${prodName} | MW: ${prodMw} g/mol \vert{} Target Yield:${targetYield}% | Actual Out: ${actualKg} kg \vert{} Theor Out:${theorKg} | % Molar Yield: ${molarYield} \vert{} \% w/w:${wwYield}`
+      "Stage / Material": `Product: ${prodName} | MW: ${prodMw} g/mol | Target Yield: ${targetYield}% | Actual Out: ${actualKg} kg | Theor Out: ${theorKg} | % Molar Yield: ${molarYield} | % w/w: ${wwYield}`
     });
     exportData.push({
-      "Stage / Material": `STAGE SUBTOTAL: Cost w/o Rec: ${stageCostWo} | Cost with Rec: ${stageCostW} \vert{} Stage Contribution:${stageCont}`
+      "Stage / Material": `STAGE SUBTOTAL: Cost w/o Rec: ${stageCostWo} | Cost with Rec: ${stageCostW} | Stage Contribution: ${stageCont}`
     });
 
     const rows = stageCard.querySelectorAll("tbody tr");
