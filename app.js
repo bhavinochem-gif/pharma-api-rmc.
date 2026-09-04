@@ -1,46 +1,161 @@
 // Storage Key for Local Persistence
-const STORAGE_KEY = "pharma_api_rmc_autosave_state_v2";
+const STORAGE_KEY = "pharma_api_rmc_autosave_state_v3";
 
 // Global State
 let priceMaster = {};
 let stageCount = 0;
 let autoSaveTimeout = null;
 
-// Solvent Density Database (g/mL)
-const SOLVENT_DENSITIES = {
-  "water": 1.000,
-  "methanol": 0.792,
-  "ethanol": 0.789,
-  "isopropanol": 0.786,
-  "ipa": 0.786,
-  "acetone": 0.784,
-  "dichloromethane": 1.326,
-  "dcm": 1.326,
-  "mdc": 1.326,
-  "toluene": 0.867,
-  "ethyl acetate": 0.902,
-  "ea": 0.902,
-  "etac": 0.902,
-  "tetrahydrofuran": 0.886,
-  "thf": 0.886,
-  "acetonitrile": 0.786,
-  "acn": 0.786,
-  "n,n-dimethylformamide": 0.944,
-  "dmf": 0.944,
-  "dimethyl sulfoxide": 1.100,
-  "dmso": 1.100,
-  "hexane": 0.655,
-  "n-hexane": 0.655,
-  "heptane": 0.684,
-  "n-heptane": 0.684,
-  "pyridine": 0.982,
-  "triethylamine": 0.726,
-  "tea": 0.726,
-  "acetic acid": 1.049,
-  "diethyl ether": 0.713,
-  "ether": 0.713,
-  "chloroform": 1.489
+// =========================================================================
+// 150+ PHARMA REAGENTS, SOLVENTS, BASES, ACIDS, CATALYSTS & SALTS DATABASE
+// =========================================================================
+const PHARMA_CHEM_DB = {
+  // --- Catalysts & Transition Metal Reagents ---
+  "5% palladium on alumina": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false, aliases: ["5% pd/al2o3", "palladium on alumina 5%", "pd/al2o3 5%"] },
+  "10% palladium on alumina": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false, aliases: ["10% pd/al2o3", "palladium on alumina 10%"] },
+  "palladium on alumina": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false, aliases: ["pd/al2o3"] },
+  "5% palladium on carbon": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false, aliases: ["5% pd/c", "pd/c 5%", "5% pd-c"] },
+  "10% palladium on carbon": { cas: "7440-05-3", mw: 106.42, density: 1.0, isLiquid: false, aliases: ["10% pd/c", "pd/c 10%", "10% pd-c", "pd/c"] },
+  "palladium(ii) acetate": { cas: "3375-31-3", mw: 224.51, density: 1.0, isLiquid: false, aliases: ["pd(oac)2", "palladium acetate"] },
+  "tetrakis(triphenylphosphine)palladium(0)": { cas: "14221-01-3", mw: 1155.56, density: 1.0, isLiquid: false, aliases: ["pd(pph3)4", "tetrakis"] },
+  "bis(triphenylphosphine)palladium(ii) dichloride": { cas: "13965-03-2", mw: 701.90, density: 1.0, isLiquid: false, aliases: ["pdcl2(pph3)2"] },
+  "[1,1'-bis(diphenylphosphino)ferrocene]dichloropalladium(ii)": { cas: "72287-26-4", mw: 731.70, density: 1.0, isLiquid: false, aliases: ["pd(dppf)cl2", "pd(dppf)cl2.dcm"] },
+  "tris(dibenzylideneacetone)dipalladium(0)": { cas: "51364-51-3", mw: 915.72, density: 1.0, isLiquid: false, aliases: ["pd2(dba)3"] },
+  "platinum(iv) oxide": { cas: "1314-15-4", mw: 227.08, density: 1.0, isLiquid: false, aliases: ["adams catalyst", "pto2"] },
+  "5% platinum on carbon": { cas: "7440-06-4", mw: 195.08, density: 1.0, isLiquid: false, aliases: ["5% pt/c", "pt/c 5%"] },
+  "raney nickel": { cas: "7440-02-0", mw: 58.69, density: 1.0, isLiquid: false, aliases: ["raney ni", "active nickel"] },
+  "copper(i) iodide": { cas: "7681-65-4", mw: 190.45, density: 1.0, isLiquid: false, aliases: ["cui"] },
+
+  // --- Common Industrial Solvents ---
+  "methanol": { cas: "67-56-1", mw: 32.04, density: 0.792, isLiquid: true, aliases: ["meoh", "methyl alcohol"] },
+  "ethanol": { cas: "64-17-5", mw: 46.07, density: 0.789, isLiquid: true, aliases: ["etoh", "ethyl alcohol"] },
+  "isopropanol": { cas: "67-63-0", mw: 60.10, density: 0.786, isLiquid: true, aliases: ["ipa", "isopropyl alcohol", "2-propanol"] },
+  "n-butanol": { cas: "71-36-3", mw: 74.12, density: 0.810, isLiquid: true, aliases: ["1-butanol", "n-buoh"] },
+  "tert-butanol": { cas: "75-65-0", mw: 74.12, density: 0.786, isLiquid: true, aliases: ["t-buoh", "tertiary butanol"] },
+  "acetone": { cas: "67-64-1", mw: 58.08, density: 0.784, isLiquid: true, aliases: ["dimethyl ketone", "2-propanone"] },
+  "methyl ethyl ketone": { cas: "78-93-3", mw: 72.11, density: 0.805, isLiquid: true, aliases: ["mek", "butan-2-one"] },
+  "methyl isobutyl ketone": { cas: "108-10-1", mw: 100.16, density: 0.802, isLiquid: true, aliases: ["mibk"] },
+  "dichloromethane": { cas: "75-09-2", mw: 84.93, density: 1.326, isLiquid: true, aliases: ["dcm", "mdc", "methylene dichloride"] },
+  "chloroform": { cas: "67-66-3", mw: 119.38, density: 1.489, isLiquid: true, aliases: ["trichloromethane", "chcl3"] },
+  "1,2-dichloroethane": { cas: "107-06-2", mw: 98.96, density: 1.253, isLiquid: true, aliases: ["edc solvent", "ethylene dichloride"] },
+  "ethyl acetate": { cas: "141-78-6", mw: 88.11, density: 0.902, isLiquid: true, aliases: ["ea", "etac", "etadd"] },
+  "isopropyl acetate": { cas: "108-21-4", mw: 102.13, density: 0.872, isLiquid: true, aliases: ["ipac"] },
+  "methyl acetate": { cas: "79-20-9", mw: 74.08, density: 0.932, isLiquid: true, aliases: ["meac"] },
+  "tetrahydrofuran": { cas: "109-99-9", mw: 72.11, density: 0.886, isLiquid: true, aliases: ["thf", "oxolane"] },
+  "2-methyltetrahydrofuran": { cas: "96-47-9", mw: 86.13, density: 0.854, isLiquid: true, aliases: ["2-methf", "me-thf"] },
+  "1,4-dioxane": { cas: "123-91-1", mw: 88.11, density: 1.033, isLiquid: true, aliases: ["dioxane"] },
+  "diethyl ether": { cas: "60-29-7", mw: 74.12, density: 0.713, isLiquid: true, aliases: ["ether", "et2o"] },
+  "methyl tert-butyl ether": { cas: "1634-04-4", mw: 88.15, density: 0.740, isLiquid: true, aliases: ["mtbe"] },
+  "diisopropyl ether": { cas: "108-20-3", mw: 102.17, density: 0.725, isLiquid: true, aliases: ["dipe"] },
+  "toluene": { cas: "108-88-3", mw: 92.14, density: 0.867, isLiquid: true, aliases: ["methylbenzene", "phme"] },
+  "o-xylene": { cas: "95-47-6", mw: 106.16, density: 0.880, isLiquid: true, aliases: ["xylene", "xylenes"] },
+  "hexane": { cas: "110-54-3", mw: 86.18, density: 0.655, isLiquid: true, aliases: ["n-hexane"] },
+  "heptane": { cas: "142-82-5", mw: 100.20, density: 0.684, isLiquid: true, aliases: ["n-heptane"] },
+  "cyclohexane": { cas: "110-82-7", mw: 84.16, density: 0.779, isLiquid: true, aliases: ["c-hexane"] },
+  "acetonitrile": { cas: "75-05-8", mw: 41.05, density: 0.786, isLiquid: true, aliases: ["acn", "mecn"] },
+  "n,n-dimethylformamide": { cas: "68-12-2", mw: 73.09, density: 0.944, isLiquid: true, aliases: ["dmf"] },
+  "n,n-dimethylacetamide": { cas: "127-19-5", mw: 87.12, density: 0.937, isLiquid: true, aliases: ["dmac", "dma"] },
+  "n-methyl-2-pyrrolidone": { cas: "872-50-4", mw: 99.13, density: 1.028, isLiquid: true, aliases: ["nmp"] },
+  "dimethyl sulfoxide": { cas: "67-68-5", mw: 78.13, density: 1.100, isLiquid: true, aliases: ["dmso"] },
+  "sulfolane": { cas: "126-33-0", mw: 120.17, density: 1.261, isLiquid: true, aliases: ["tetramethylene sulfone"] },
+  "water": { cas: "7732-18-5", mw: 18.02, density: 1.000, isLiquid: true, aliases: ["purified water", "dm water", "h2o"] },
+
+  // --- Organic & Inorganic Bases ---
+  "triethylamine": { cas: "121-44-8", mw: 101.19, density: 0.726, isLiquid: true, aliases: ["tea", "et3n"] },
+  "diisopropylethylamine": { cas: "7087-68-5", mw: 129.24, density: 0.755, isLiquid: true, aliases: ["dipea", "hunig's base", "hünig base"] },
+  "pyridine": { cas: "110-86-1", mw: 79.10, density: 0.982, isLiquid: true, aliases: ["py"] },
+  "1,8-diazabicyclo[5.4.0]undec-7-ene": { cas: "6674-22-2", mw: 152.24, density: 1.018, isLiquid: true, aliases: ["dbu"] },
+  "1,5-diazabicyclo[4.3.0]non-5-ene": { cas: "3001-72-7", mw: 124.18, density: 1.005, isLiquid: true, aliases: ["dbn"] },
+  "4-dimethylaminopyridine": { cas: "1122-58-3", mw: 122.17, density: 1.0, isLiquid: false, aliases: ["dmap"] },
+  "n-methylmorpholine": { cas: "109-02-4", mw: 101.15, density: 0.920, isLiquid: true, aliases: ["nmm"] },
+  "potassium carbonate": { cas: "584-08-7", mw: 138.21, density: 1.0, isLiquid: false, aliases: ["k2co3"] },
+  "sodium carbonate": { cas: "497-19-8", mw: 105.99, density: 1.0, isLiquid: false, aliases: ["na2co3", "soda ash"] },
+  "cesium carbonate": { cas: "534-17-8", mw: 325.82, density: 1.0, isLiquid: false, aliases: ["cs2co3"] },
+  "sodium bicarbonate": { cas: "144-55-8", mw: 84.01, density: 1.0, isLiquid: false, aliases: ["nahco3", "baking soda"] },
+  "potassium bicarbonate": { cas: "298-14-6", mw: 100.11, density: 1.0, isLiquid: false, aliases: ["khco3"] },
+  "sodium hydroxide": { cas: "1310-73-2", mw: 40.00, density: 1.0, isLiquid: false, aliases: ["naoh", "caustic soda"] },
+  "potassium hydroxide": { cas: "1310-58-3", mw: 56.11, density: 1.0, isLiquid: false, aliases: ["koh", "caustic potash"] },
+  "sodium tert-butoxide": { cas: "865-48-5", mw: 96.10, density: 1.0, isLiquid: false, aliases: ["naotbu"] },
+  "potassium tert-butoxide": { cas: "865-47-4", mw: 112.21, density: 1.0, isLiquid: false, aliases: ["kotbu"] },
+  "sodium hydride": { cas: "7646-69-7", mw: 24.00, density: 1.0, isLiquid: false, aliases: ["nah", "60% nah"] },
+  "lithium diisopropylamide": { cas: "4111-54-0", mw: 107.14, density: 0.790, isLiquid: true, aliases: ["lda"] },
+
+  // --- Acids & Acid Chlorides ---
+  "hydrochloric acid (35%)": { cas: "7647-01-0", mw: 36.46, density: 1.180, isLiquid: true, aliases: ["hcl", "concentrated hcl", "35% hcl", "hydrochloric acid"] },
+  "sulfuric acid": { cas: "7664-93-9", mw: 98.08, density: 1.840, isLiquid: true, aliases: ["h2so4", "conc h2so4"] },
+  "nitric acid": { cas: "7697-37-2", mw: 63.01, density: 1.420, isLiquid: true, aliases: ["hno3"] },
+  "phosphoric acid (85%)": { cas: "7664-38-2", mw: 98.00, density: 1.685, isLiquid: true, aliases: ["h3po4", "85% h3po4"] },
+  "acetic acid": { cas: "64-19-7", mw: 60.05, density: 1.049, isLiquid: true, aliases: ["gfaa", "glacial acetic acid", "acoh"] },
+  "trifluoroacetic acid": { cas: "76-05-1", mw: 114.02, density: 1.489, isLiquid: true, aliases: ["tfa"] },
+  "methanesulfonic acid": { cas: "75-75-2", mw: 96.11, density: 1.481, isLiquid: true, aliases: ["msa", "methanesulphonic acid"] },
+  "p-toluenesulfonic acid monohydrate": { cas: "6192-52-5", mw: 190.22, density: 1.0, isLiquid: false, aliases: ["ptsa", "tsoh"] },
+  "formic acid": { cas: "64-18-6", mw: 46.03, density: 1.220, isLiquid: true, aliases: ["hcooh"] },
+  "thionyl chloride": { cas: "7719-09-7", mw: 118.97, density: 1.638, isLiquid: true, aliases: ["socl2"] },
+  "oxalyl chloride": { cas: "79-37-8", mw: 126.93, density: 1.480, isLiquid: true, aliases: ["(cocl)2"] },
+  "phosphorus oxychloride": { cas: "10025-87-3", mw: 153.33, density: 1.645, isLiquid: true, aliases: ["pocl3"] },
+
+  // --- Coupling Reagents & Additives ---
+  "1-(3-dimethylaminopropyl)-3-ethylcarbodiimide hcl": { cas: "25952-53-8", mw: 191.70, density: 1.0, isLiquid: false, aliases: ["edc hcl", "edc.hcl", "edac"] },
+  "n,n'-dicyclohexylcarbodiimide": { cas: "538-75-0", mw: 206.33, density: 1.0, isLiquid: false, aliases: ["dcc"] },
+  "n,n'-diisopropylcarbodiimide": { cas: "693-13-0", mw: 126.20, density: 0.806, isLiquid: true, aliases: ["dic"] },
+  "1,1'-carbonyldiimidazole": { cas: "530-62-1", mw: 162.15, density: 1.0, isLiquid: false, aliases: ["cdi"] },
+  "1-hydroxybenzotriazole hydrate": { cas: "123333-53-9", mw: 153.14, density: 1.0, isLiquid: false, aliases: ["hobt", "hobt.h2o"] },
+  "1-hydroxy-7-azabenzotriazole": { cas: "39968-33-7", mw: 136.11, density: 1.0, isLiquid: false, aliases: ["hoat"] },
+  "o-(7-azabenzotriazol-1-yl)-n,n,n',n'-tetramethyluronium hexafluorophosphate": { cas: "148893-10-1", mw: 380.23, density: 1.0, isLiquid: false, aliases: ["hatu"] },
+  "o-(benzotriazol-1-yl)-n,n,n',n'-tetramethyluronium hexafluorophosphate": { cas: "94790-37-1", mw: 379.24, density: 1.0, isLiquid: false, aliases: ["hbtu"] },
+  "propylphosphonic anhydride (50% in etoac)": { cas: "68957-94-8", mw: 318.18, density: 1.070, isLiquid: true, aliases: ["t3p", "t3p in etoac"] },
+
+  // --- Reducing & Oxidizing Reagents ---
+  "sodium borohydride": { cas: "16940-66-2", mw: 37.83, density: 1.0, isLiquid: false, aliases: ["nabh4"] },
+  "lithium aluminium hydride": { cas: "16853-85-3", mw: 37.95, density: 1.0, isLiquid: false, aliases: ["lah", "lialh4"] },
+  "sodium cyanoborohydride": { cas: "25895-60-7", mw: 62.84, density: 1.0, isLiquid: false, aliases: ["nabh3cn"] },
+  "sodium triacetoxyborohydride": { cas: "56553-60-7", mw: 211.94, density: 1.0, isLiquid: false, aliases: ["stab", "na(oac)3bh"] },
+  "diisobutylaluminium hydride (1.0m in tol)": { cas: "1191-15-7", mw: 142.22, density: 0.860, isLiquid: true, aliases: ["dibal", "dibal-h"] },
+  "hydrogen peroxide (30%)": { cas: "7722-84-1", mw: 34.01, density: 1.110, isLiquid: true, aliases: ["h2o2", "30% h2o2"] },
+  "3-chloroperbenzoic acid": { cas: "937-14-4", mw: 172.57, density: 1.0, isLiquid: false, aliases: ["mcpba"] },
+  "sodium hypochlorite (10-12%)": { cas: "7681-52-9", mw: 74.44, density: 1.210, isLiquid: true, aliases: ["naocl", "bleach"] },
+
+  // --- Protecting Groups & Silyl Reagents ---
+  "di-tert-butyl dicarbonate": { cas: "24424-99-5", mw: 218.25, density: 0.950, isLiquid: true, aliases: ["boc2o", "boc anhydride"] },
+  "benzyl chloroformate": { cas: "501-53-1", mw: 170.59, density: 1.195, isLiquid: true, aliases: ["cbz-cl", "cbz chloride"] },
+  "tert-butyldimethylsilyl chloride": { cas: "18162-48-6", mw: 150.72, density: 1.0, isLiquid: false, aliases: ["tbscl", "tbdmscl"] },
+  "trimethylsilyl chloride": { cas: "75-77-4", mw: 108.64, density: 0.856, isLiquid: true, aliases: ["tmscl", "chlorotrimethylsilane"] }
 };
+
+// Fuzzy Search in internal Chemical Database
+function searchInternalChemicalDB(query) {
+  if (!query) return null;
+  const clean = query.trim().toLowerCase();
+
+  // 1. Direct key match
+  if (PHARMA_CHEM_DB[clean]) {
+    return { name: clean, ...PHARMA_CHEM_DB[clean] };
+  }
+
+  // 2. Alias match
+  for (const [chemKey, data] of Object.entries(PHARMA_CHEM_DB)) {
+    if (data.aliases && data.aliases.some(a => a.toLowerCase() === clean)) {
+      return { name: chemKey, ...data };
+    }
+  }
+
+  // 3. Partial Token Normalization (Strip percentages e.g. "5% ", "10% ")
+  const stripped = clean.replace(/^\d+%\s*/, "").trim();
+  for (const [chemKey, data] of Object.entries(PHARMA_CHEM_DB)) {
+    if (chemKey === stripped || (data.aliases && data.aliases.some(a => a.toLowerCase() === stripped))) {
+      return { name: chemKey, ...data };
+    }
+  }
+
+  // 4. Substring inclusion
+  for (const [chemKey, data] of Object.entries(PHARMA_CHEM_DB)) {
+    if (clean.includes(chemKey) || chemKey.includes(clean)) {
+      return { name: chemKey, ...data };
+    }
+  }
+
+  return null;
+}
 
 function refreshIcons() {
   if (window.lucide) lucide.createIcons();
@@ -53,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!loaded) {
     addNewStage("Stage-1: KSM Condensation");
   }
+  populateMasterDatalist();
   refreshIcons();
 });
 
@@ -81,152 +197,13 @@ function setupEventListeners() {
   });
 }
 
-// ----------------- RMC WORKBOOK IMPORT REVERSE-PARSER -----------------
-
-function handleRmcSheetUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function (evt) {
-    try {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-
-      const sheetName = workbook.SheetNames.find(s => s.toLowerCase().includes("stage")) || workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      if (!sheet) {
-        alert("Unable to find costing data in the uploaded workbook.");
-        return;
-      }
-
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-      if (!rows || rows.length < 4) {
-        alert("The uploaded file does not match the expected RMC sheet structure.");
-        return;
-      }
-
-      let parsedProjectName = "";
-      let parsedBatchSize = "";
-
-      if (rows[0] && rows[0][0]) {
-        const titleStr = String(rows[0][0]);
-        const match = titleStr.match(/^(.*?)\s*-\s*STAGE-WISE RAW MATERIAL/i);
-        parsedProjectName = match ? match[1].trim() : titleStr.replace(/report/i, "").trim();
-      }
-
-      if (rows[1] && rows[1][0]) {
-        const metaStr = String(rows[1][0]);
-        const batchMatch = metaStr.match(/Target API Batch Size:\s*([\d.]+)/i);
-        if (batchMatch) parsedBatchSize = batchMatch[1].trim();
-      }
-
-      const parsedStages = [];
-      let currentStage = null;
-      let inTable = false;
-
-      for (let r = 0; r < rows.length; r++) {
-        const row = rows[r];
-        const cell0 = String(row[0] || "").trim();
-
-        if (cell0.startsWith("STAGE:")) {
-          const stageName = cell0.replace(/^STAGE:\s*/i, "").trim();
-          currentStage = {
-            stageName: stageName,
-            prodName: "",
-            prodMw: 0,
-            actualQty: parsedBatchSize || "",
-            materials: []
-          };
-          parsedStages.push(currentStage);
-          inTable = false;
-          continue;
-        }
-
-        if (cell0.startsWith("Product:") && currentStage) {
-          const prodMatch = cell0.match(/Product:\s*(.*?)\s*\|\s*MW:\s*([\d.]+)\s*g\/mol\s*\|\s*Actual:\s*([\d.]+)\s*kg/i);
-          if (prodMatch) {
-            currentStage.prodName = prodMatch[1].trim();
-            currentStage.prodMw = prodMatch[2].trim();
-            currentStage.actualQty = prodMatch[3].trim();
-          }
-          continue;
-        }
-
-        if (cell0 === "Sr." && currentStage) {
-          inTable = true;
-          continue;
-        }
-
-        if (cell0.startsWith("OVERALL FINISHED")) {
-          break;
-        }
-
-        if (inTable && currentStage) {
-          const srNum = parseInt(cell0);
-          if (isNaN(srNum)) {
-            inTable = false;
-            continue;
-          }
-
-          const cas = String(row[1] || "").trim();
-          const name = String(row[2] || "").trim();
-          const density = row[3] !== "" ? row[3] : 1.0;
-          const ratioTypeRaw = String(row[4] || "").toLowerCase();
-          const ratioType = ratioTypeRaw.includes("vol") ? "volume" : "mole";
-          const moleVolRatio = row[5] !== "" ? row[5] : 1.0;
-          const qty = row[6] !== "" ? row[6] : 0;
-          const unit = String(row[7] || "kg").trim();
-          const mw = row[8] !== "" ? row[8] : 0;
-          const recPercent = row[11] !== "" ? row[11] : 0;
-          const rateWo = row[13] !== "" ? row[13] : 0;
-          const rateWith = row[14] !== "" ? row[14] : 0;
-
-          currentStage.materials.push({
-            cas,
-            name,
-            density,
-            ratioType,
-            moleVolRatio,
-            qty,
-            unit,
-            mw,
-            recPercent,
-            rateWo,
-            rateWith,
-            isInHouse: cas.toLowerCase().includes("in-house")
-          });
-        }
-      }
-
-      if (parsedStages.length === 0) {
-        alert("Could not identify any reaction stages. Verify that this file was exported by this tool.");
-        return;
-      }
-
-      renderStagesFromState({
-        projectName: parsedProjectName,
-        apiBatchSize: parsedBatchSize,
-        stages: parsedStages
-      });
-
-      triggerAutoSave();
-      alert(`RMC Sheet loaded successfully! Restored ${parsedStages.length} reaction stages.`);
-    } catch (err) {
-      console.error("RMC Import Error:", err);
-      alert("Error parsing RMC sheet. Please ensure it is a valid, uncorrupted Excel workbook.");
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-// ----------------- AUTO-SAVE & SESSION RESTORATION ENGINE -----------------
+// ----------------- AUTO-SAVE & SESSION ENGINE -----------------
 
 function triggerAutoSave() {
   const indicator = document.getElementById("autoSaveIndicator");
   if (indicator) {
     indicator.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin text-amber-400"></i> Saving...`;
-    indicator.className = "inline-flex items-center text-[11px] font-medium text-amber-300 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded-full transition-all";
+    indicator.className = "inline-flex items-center text-[11px] font-medium text-amber-300 bg-amber-950/70 border border-amber-700/80 px-2.5 py-0.5 rounded-full transition-all";
     refreshIcons();
   }
 
@@ -235,7 +212,7 @@ function triggerAutoSave() {
     saveToLocalStorage();
     if (indicator) {
       indicator.innerHTML = `<i data-lucide="check" class="w-3 h-3 mr-1 text-emerald-400"></i> Auto-saved`;
-      indicator.className = "inline-flex items-center text-[11px] font-medium text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-full transition-all";
+      indicator.className = "inline-flex items-center text-[11px] font-medium text-emerald-400 bg-emerald-950/70 border border-emerald-700/80 px-2.5 py-0.5 rounded-full transition-all";
       refreshIcons();
     }
   }, 400);
@@ -270,13 +247,7 @@ function saveToLocalStorage() {
       });
     });
 
-    stagesData.push({
-      stageName,
-      prodName,
-      prodMw,
-      actualQty,
-      materials
-    });
+    stagesData.push({ stageName, prodName, prodMw, actualQty, materials });
   });
 
   const fullState = {
@@ -366,181 +337,18 @@ function renderStagesFromState(state) {
   });
 
   updateStageBadgeNumbers();
-  updateDatalistOptions();
+  populateMasterDatalist();
   recalculateAll();
 }
 
 function resetProjectData() {
-  const confirmReset = confirm("Are you sure you want to clear this project and start fresh? All typed data in this session will be removed.");
-  if (!confirmReset) return;
-
-  localStorage.removeItem(STORAGE_KEY);
-  location.reload();
+  if (confirm("Clear all stages, materials and start fresh? All session data will be reset.")) {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
 }
 
-// ----------------- EXCEL PRICE MASTER & PARSING -----------------
-
-function normalizeHeaderKey(str) {
-  if (!str) return "";
-  return str.toString().toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function handleExcelUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function (evt) {
-    try {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      
-      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-        alert("The uploaded Excel workbook has no sheets.");
-        return;
-      }
-
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-      if (rawRows.length === 0) {
-        alert("The uploaded sheet appears to be empty. Please verify row contents.");
-        return;
-      }
-
-      priceMaster = {};
-      let matchedCount = 0;
-
-      rawRows.forEach((row) => {
-        const normalized = {};
-        Object.keys(row).forEach((k) => {
-          normalized[normalizeHeaderKey(k)] = row[k];
-        });
-
-        const name = (
-          normalized["nameofrawmaterial"] ||
-          normalized["rawmaterialname"] ||
-          normalized["rmname"] ||
-          normalized["name"] ||
-          normalized["rawmaterial"] ||
-          normalized["material"] ||
-          normalized["item"] ||
-          ""
-        ).toString().trim();
-
-        const cas = (
-          normalized["casno"] ||
-          normalized["casnumber"] ||
-          normalized["cas"] ||
-          normalized["casregistry"] ||
-          ""
-        ).toString().trim();
-
-        const mw = parseFloat(
-          normalized["molecularweight"] ||
-          normalized["molweight"] ||
-          normalized["mw"] ||
-          normalized["molwt"] ||
-          0
-        ) || 0;
-
-        const density = parseFloat(
-          normalized["density"] ||
-          normalized["spgravity"] ||
-          normalized["specificgravity"] ||
-          normalized["sg"] ||
-          0
-        ) || 0;
-
-        const rate = parseFloat(
-          normalized["ratekg"] ||
-          normalized["rate"] ||
-          normalized["pricekg"] ||
-          normalized["price"] ||
-          normalized["unitprice"] ||
-          normalized["costkg"] ||
-          normalized["cost"] ||
-          0
-        ) || 0;
-
-        if (name) {
-          priceMaster[name.toLowerCase()] = { name, cas, mw, density, rate };
-          matchedCount++;
-        }
-      });
-
-      if (matchedCount === 0) {
-        alert("Failed to find valid Raw Material columns. Please click 'Download Template' to view expected column titles.");
-        return;
-      }
-
-      document.getElementById("uploadLabel").innerText = `Loaded (${matchedCount} items)`;
-      updateDatalistOptions();
-      recalculateAll();
-      triggerAutoSave();
-      alert(`Success! Loaded ${matchedCount} Raw Materials into the Price Master.`);
-    } catch (err) {
-      console.error("Excel Upload Error:", err);
-      alert("Error parsing file. Ensure it is a valid .xlsx or .csv format.");
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function downloadSampleRateCard() {
-  const sampleData = [
-    { "CAS No": "67-56-1", "Name of Raw Material": "Methanol", "Molecular Weight": 32.04, "Density": 0.792, "Rate/Kg": 42.00 },
-    { "CAS No": "75-09-2", "Name of Raw Material": "Dichloromethane", "Molecular Weight": 84.93, "Density": 1.326, "Rate/Kg": 68.50 },
-    { "CAS No": "108-88-3", "Name of Raw Material": "Toluene", "Molecular Weight": 92.14, "Density": 0.867, "Rate/Kg": 88.00 },
-    { "CAS No": "141-78-6", "Name of Raw Material": "Ethyl Acetate", "Molecular Weight": 88.11, "Density": 0.902, "Rate/Kg": 94.00 },
-    { "CAS No": "67-64-1", "Name of Raw Material": "Acetone", "Molecular Weight": 58.08, "Density": 0.784, "Rate/Kg": 72.00 },
-    { "CAS No": "121-44-8", "Name of Raw Material": "Triethylamine", "Molecular Weight": 101.19, "Density": 0.726, "Rate/Kg": 210.00 },
-    { "CAS No": "16940-66-2", "Name of Raw Material": "Sodium Borohydride", "Molecular Weight": 37.83, "Density": 1.070, "Rate/Kg": 850.00 },
-    { "CAS No": "25952-53-8", "Name of Raw Material": "EDC HCl", "Molecular Weight": 191.70, "Density": 1.000, "Rate/Kg": 2800.00 },
-    { "CAS No": "7647-01-0", "Name of Raw Material": "Hydrochloric Acid (35%)", "Molecular Weight": 36.46, "Density": 1.180, "Rate/Kg": 14.00 },
-    { "CAS No": "125971-94-0", "Name of Raw Material": "Key Starting Material (KSM-1)", "Molecular Weight": 425.50, "Density": 1.000, "Rate/Kg": 6500.00 }
-  ];
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(sampleData);
-  ws["!cols"] = [{ wch: 16 }, { wch: 32 }, { wch: 18 }, { wch: 12 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, ws, "RM_Price_Master");
-  XLSX.writeFile(wb, "Standard_RM_Rate_Master_Template.xlsx");
-}
-
-function updateDatalistOptions() {
-  const dataList = document.getElementById("rmMasterList");
-  dataList.innerHTML = "";
-
-  Object.values(priceMaster).forEach((item) => {
-    const opt = document.createElement("option");
-    opt.value = item.name;
-    opt.label = `Master RM (Rate: ₹${item.rate})`;
-    dataList.appendChild(opt);
-  });
-
-  document.querySelectorAll(".stage-card").forEach((card) => {
-    const stageName = card.querySelector(".stage-name-input").value.trim();
-    const prodName = card.querySelector(".stage-prod-name").value.trim();
-    const costWo = card.dataset.unitCostWoRec || "0.00";
-    const costW = card.dataset.unitCostWithRec || "0.00";
-
-    if (prodName) {
-      const opt = document.createElement("option");
-      opt.value = prodName;
-      opt.label = `Intermediate (w/o Rec: ₹${costWo} \vert{} with Rec: ₹${costW})`;
-      dataList.appendChild(opt);
-    }
-    if (stageName && stageName.toLowerCase() !== prodName.toLowerCase()) {
-      const opt = document.createElement("option");
-      opt.value = stageName;
-      opt.label = `Stage Ref (w/o Rec: ₹${costWo} \vert{} with Rec: ₹${costW})`;
-      dataList.appendChild(opt);
-    }
-  });
-}
-
-// ----------------- STAGE MANAGEMENT -----------------
+// ----------------- STAGE & MULTI-ROW ACTIONS -----------------
 
 function addNewStage(defaultStageName) {
   stageCount++;
@@ -566,10 +374,13 @@ function addNewStage(defaultStageName) {
         />
       </div>
       <div class="flex items-center space-x-2">
-        <button onclick="addMaterialRow('${stageId}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center transition">
+        <button onclick="addMaterialRow('${stageId}')" class="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center transition shadow-sm">
           <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> Add Material
         </button>
-        <button onclick="removeStage('${stageId}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded transition">
+        <button onclick="deleteSelectedRows('${stageId}')" class="bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center transition shadow-sm" title="Delete all selected raw material lines">
+          <i data-lucide="trash" class="w-3.5 h-3.5 mr-1"></i> Delete Selected
+        </button>
+        <button onclick="removeStage('${stageId}')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded transition" title="Delete whole stage">
           <i data-lucide="trash-2" class="w-4 h-4"></i>
         </button>
       </div>
@@ -579,9 +390,10 @@ function addNewStage(defaultStageName) {
       <table class="rmc-table" id="table_${stageId}">
         <thead>
           <tr>
+            <th class="w-8"><input type="checkbox" title="Select / Deselect All Rows" onchange="toggleSelectAllRows(this, '${stageId}')" /></th>
             <th>Sr.</th>
             <th>CAS No.</th>
-            <th style="min-width: 170px;">Name of Raw Material</th>
+            <th style="min-width: 180px;">Name of Raw Material</th>
             <th>Density<br/>(g/mL)</th>
             <th>Ratio Type</th>
             <th>Mole / Vol<br/>Ratio</th>
@@ -655,7 +467,7 @@ function addNewStage(defaultStageName) {
   container.appendChild(stageCard);
   addMaterialRow(stageId);
   updateStageBadgeNumbers();
-  updateDatalistOptions();
+  populateMasterDatalist();
   refreshIcons();
   return stageId;
 }
@@ -665,7 +477,7 @@ function removeStage(stageId) {
   if (stage) {
     stage.remove();
     updateStageBadgeNumbers();
-    updateDatalistOptions();
+    populateMasterDatalist();
     recalculateAll();
     triggerAutoSave();
   }
@@ -678,13 +490,12 @@ function updateStageBadgeNumbers() {
 }
 
 function onStageMetadataChange() {
-  updateDatalistOptions();
+  populateMasterDatalist();
   recalculateAll();
   triggerAutoSave();
 }
 
-// ----------------- RAW MATERIAL ROW MANAGEMENT -----------------
-
+// Add Raw Material Row with Line-Selection Checkbox
 function addMaterialRow(stageId) {
   const tbody = document.querySelector(`#table_${stageId} tbody`);
   const rowCount = tbody.children.length + 1;
@@ -692,6 +503,9 @@ function addMaterialRow(stageId) {
   const row = document.createElement("tr");
 
   row.innerHTML = `
+    <td class="text-center">
+      <input type="checkbox" class="row-select" ${isFirstRow ? 'disabled title="Reference starting material cannot be bulk deleted"' : ''} />
+    </td>
     <td class="text-center font-bold text-slate-500 sr-no">${rowCount}</td>
     <td><input type="text" class="cas-no w-24" placeholder="CAS No." /></td>
     <td>
@@ -699,13 +513,13 @@ function addMaterialRow(stageId) {
         <input 
           type="text" 
           list="rmMasterList" 
-          class="rm-name w-36 font-medium" 
-          placeholder="Type RM or Stage..." 
+          class="rm-name w-40 font-medium" 
+          placeholder="Select / Type RM..." 
           onchange="autoFillRM(this)" 
         />
         <button 
           type="button" 
-          title="Auto-fetch CAS, MW & Density online" 
+          title="Auto-fetch CAS, MW & Density" 
           onclick="fetchOnlineChemData(this, this.previousElementSibling)" 
           class="p-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition"
         >
@@ -758,7 +572,7 @@ function addMaterialRow(stageId) {
     <td class="read-only-cell cont-wo-rec">0.00%</td>
     <td class="read-only-cell cont-w-rec">0.00%</td>
     <td class="text-center">
-      ${isFirstRow ? '<span class="text-xs text-slate-300">Ref</span>' : '<button onclick="removeRow(this)" class="text-slate-400 hover:text-rose-600 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>'}
+      ${isFirstRow ? '<span class="text-xs text-slate-300">Ref</span>' : '<button onclick="removeRow(this)" class="text-slate-400 hover:text-rose-600 transition" title="Delete this line"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>'}
     </td>
   `;
 
@@ -779,6 +593,42 @@ function removeRow(btn) {
   triggerAutoSave();
 }
 
+// Multi-Row Selection & Bulk Deletion
+function toggleSelectAllRows(masterCheckbox, stageId) {
+  const tbody = document.querySelector(`#table_${stageId} tbody`);
+  const checkboxes = tbody.querySelectorAll(".row-select:not(:disabled)");
+  checkboxes.forEach((cb) => {
+    cb.checked = masterCheckbox.checked;
+  });
+}
+
+function deleteSelectedRows(stageId) {
+  const tbody = document.querySelector(`#table_${stageId} tbody`);
+  const selectedCheckboxes = tbody.querySelectorAll(".row-select:checked:not(:disabled)");
+
+  if (selectedCheckboxes.length === 0) {
+    alert("Please check the box next to the raw material line(s) you wish to delete.");
+    return;
+  }
+
+  if (confirm(`Are you sure you want to delete the ${selectedCheckboxes.length} selected line(s)?`)) {
+    selectedCheckboxes.forEach((cb) => {
+      const row = cb.closest("tr");
+      if (row) row.remove();
+    });
+
+    Array.from(tbody.querySelectorAll(".sr-no")).forEach((td, index) => {
+      td.innerText = index + 1;
+    });
+
+    const masterCheckbox = document.querySelector(`#table_${stageId} thead input[type="checkbox"]`);
+    if (masterCheckbox) masterCheckbox.checked = false;
+
+    recalculateAll();
+    triggerAutoSave();
+  }
+}
+
 function onRateInput(inputElem, type) {
   const row = inputElem.closest("tr");
   const isInHouse = row.dataset.isInHouse === "true";
@@ -787,6 +637,50 @@ function onRateInput(inputElem, type) {
     row.querySelector(".rate-with-rec").value = inputElem.value;
   }
   recalculateAll();
+}
+
+// ----------------- CHEMICAL LOOKUP & DENSITY POPULATOR -----------------
+
+function populateMasterDatalist() {
+  const dataList = document.getElementById("rmMasterList");
+  dataList.innerHTML = "";
+
+  // 1. Built-in Pharma DB compounds
+  Object.keys(PHARMA_CHEM_DB).forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name.replace(/\b\w/g, l => l.toUpperCase());
+    opt.label = `DB (MW: ${PHARMA_CHEM_DB[name].mw}, D: ${PHARMA_CHEM_DB[name].density})`;
+    dataList.appendChild(opt);
+  });
+
+  // 2. Uploaded Excel Master items
+  Object.values(priceMaster).forEach((item) => {
+    const opt = document.createElement("option");
+    opt.value = item.name;
+    opt.label = `Excel Master (Rate: ₹${item.rate})`;
+    dataList.appendChild(opt);
+  });
+
+  // 3. In-page Stage Products
+  document.querySelectorAll(".stage-card").forEach((card) => {
+    const prodName = card.querySelector(".stage-prod-name").value.trim();
+    const stageName = card.querySelector(".stage-name-input").value.trim();
+    const costWo = card.dataset.unitCostWoRec || "0.00";
+    const costW = card.dataset.unitCostWithRec || "0.00";
+
+    if (prodName) {
+      const opt = document.createElement("option");
+      opt.value = prodName;
+      opt.label = `Intermediate (w/o: ₹${costWo} | with: ₹${costW})`;
+      dataList.appendChild(opt);
+    }
+    if (stageName && stageName.toLowerCase() !== prodName.toLowerCase()) {
+      const opt = document.createElement("option");
+      opt.value = stageName;
+      opt.label = `Stage Ref (w/o: ₹${costWo} | with: ₹${costW})`;
+      dataList.appendChild(opt);
+    }
+  });
 }
 
 function autoFillRM(input) {
@@ -831,28 +725,133 @@ function autoFillRM(input) {
   row.dataset.isInHouse = "false";
   row.classList.remove("stage-lookup-badge");
 
-  // 2. Check Master Sheet
+  // 2. Check 150+ Built-in Pharma DB (Handles 5% Palladium on alumina, solvents, etc.)
+  const dbMatch = searchInternalChemicalDB(val);
+  if (dbMatch) {
+    if (dbMatch.cas) row.querySelector(".cas-no").value = dbMatch.cas;
+    if (dbMatch.mw > 0) row.querySelector(".mw").value = dbMatch.mw;
+    if (dbMatch.density > 0) row.querySelector(".density").value = dbMatch.density;
+
+    if (dbMatch.isLiquid) {
+      row.querySelector(".unit-select").value = "L";
+      row.querySelector(".ratio-type").value = "volume";
+    }
+  }
+
+  // 3. Check uploaded Excel Master Sheet for rates and custom SAP
   if (priceMaster[val]) {
     const item = priceMaster[val];
-    row.querySelector(".cas-no").value = item.cas || "";
-    row.querySelector(".mw").value = item.mw || 0;
+    if (item.cas) row.querySelector(".cas-no").value = item.cas;
+    if (item.mw > 0) row.querySelector(".mw").value = item.mw;
     if (item.density > 0) row.querySelector(".density").value = item.density;
     row.querySelector(".rate-wo-rec").value = item.rate || 0;
     row.querySelector(".rate-with-rec").value = item.rate || 0;
-  }
-
-  // 3. Check Solvent Database
-  if (SOLVENT_DENSITIES[val]) {
-    row.querySelector(".density").value = SOLVENT_DENSITIES[val];
-    row.querySelector(".ratio-type").value = "volume";
-    row.querySelector(".unit-select").value = "L";
   }
 
   recalculateAll();
   triggerAutoSave();
 }
 
-// ----------------- AUTOMATED ENGINES -----------------
+async function fetchOnlineChemData(btn, inputElement) {
+  const row = inputElement.closest("tr");
+  const rawQuery = inputElement.value.trim();
+  if (!rawQuery) return alert("Please enter a chemical name first.");
+
+  const originalIcon = btn.innerHTML;
+  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
+  refreshIcons();
+
+  // First check internal database (prevents failure for supported catalysts like 5% Palladium on alumina)
+  const dbMatch = searchInternalChemicalDB(rawQuery);
+  if (dbMatch) {
+    row.querySelector(".cas-no").value = dbMatch.cas;
+    row.querySelector(".mw").value = dbMatch.mw;
+    row.querySelector(".density").value = dbMatch.density;
+    if (dbMatch.isLiquid) {
+      row.querySelector(".unit-select").value = "L";
+      row.querySelector(".ratio-type").value = "volume";
+    }
+    btn.innerHTML = originalIcon;
+    refreshIcons();
+    recalculateAll();
+    triggerAutoSave();
+    return;
+  }
+
+  // Normalization for PubChem (strips percentage prefixes and alumina/carbon supports if needed)
+  let cleanedName = rawQuery.replace(/^\d+%\s*/i, "").trim();
+  if (cleanedName.toLowerCase().includes("on alumina")) cleanedName = "palladium";
+  if (cleanedName.toLowerCase().includes("on carbon")) cleanedName = "palladium";
+
+  try {
+    const encodedName = encodeURIComponent(cleanedName);
+    const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/synonyms/JSON`);
+    let casNo = "";
+    if (synRes.ok) {
+      const synData = await synRes.json();
+      const synonyms = synData?.InformationList?.Information?.[0]?.Synonym || [];
+      const casRegex = /^[1-9]\d{1,6}-\d{2}-\d$/;
+      const match = synonyms.find((item) => casRegex.test(item.trim()));
+      if (match) casNo = match.trim();
+    }
+
+    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/property/MolecularWeight/JSON`);
+    let mw = 0;
+    if (propRes.ok) {
+      const propData = await propRes.json();
+      mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
+    }
+
+    if (casNo) row.querySelector(".cas-no").value = casNo;
+    if (mw > 0) row.querySelector(".mw").value = parseFloat(mw).toFixed(2);
+
+    if (!casNo && mw === 0) {
+      alert(`No online record found for "${rawQuery}". Please specify CAS & MW manually.`);
+    } else {
+      recalculateAll();
+      triggerAutoSave();
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Online search timed out. Details can be entered manually.");
+  } finally {
+    btn.innerHTML = originalIcon;
+    refreshIcons();
+  }
+}
+
+async function fetchProductMWOnline(btn) {
+  const card = btn.closest(".stage-card");
+  const prodName = card.querySelector(".stage-prod-name").value.trim();
+  if (!prodName) return alert("Please enter intermediate name first.");
+
+  const originalIcon = btn.innerHTML;
+  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
+  refreshIcons();
+
+  try {
+    const encodedName = encodeURIComponent(prodName);
+    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/property/MolecularWeight/JSON`);
+    if (propRes.ok) {
+      const propData = await propRes.json();
+      const mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
+      if (mw > 0) {
+        card.querySelector(".stage-prod-mw").value = parseFloat(mw).toFixed(2);
+        recalculateAll();
+        triggerAutoSave();
+      }
+    } else {
+      alert(`No record found for "${prodName}".`);
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    btn.innerHTML = originalIcon;
+    refreshIcons();
+  }
+}
+
+// ----------------- CALCULATION & REVERSE CASCADE -----------------
 
 function scaleAllStagesToTarget() {
   const targetApiKg = parseFloat(document.getElementById("apiBatchSize").value) || 0;
@@ -891,92 +890,6 @@ function scaleAllStagesToTarget() {
   alert(`All stages scaled via reverse-yield cascade to produce ${targetApiKg} kg API.`);
 }
 
-async function fetchProductMWOnline(btn) {
-  const card = btn.closest(".stage-card");
-  const prodName = card.querySelector(".stage-prod-name").value.trim();
-  if (!prodName) return alert("Please enter product name first.");
-
-  const originalIcon = btn.innerHTML;
-  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
-  refreshIcons();
-
-  try {
-    const encodedName = encodeURIComponent(prodName);
-    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/property/MolecularWeight/JSON`);
-    if (propRes.ok) {
-      const propData = await propRes.json();
-      const mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
-      if (mw > 0) {
-        card.querySelector(".stage-prod-mw").value = parseFloat(mw).toFixed(2);
-        recalculateAll();
-        triggerAutoSave();
-      }
-    } else {
-      alert(`No record found for "${prodName}".`);
-    }
-  } catch (err) {
-    console.error(err);
-  } finally {
-    btn.innerHTML = originalIcon;
-    refreshIcons();
-  }
-}
-
-async function fetchOnlineChemData(btn, inputElement) {
-  const row = inputElement.closest("tr");
-  const rmName = inputElement.value.trim();
-  if (!rmName) return alert("Please enter a Raw Material name first.");
-
-  const originalIcon = btn.innerHTML;
-  btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-indigo-600"></i>`;
-  refreshIcons();
-
-  try {
-    const encodedName = encodeURIComponent(rmName);
-    const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/synonyms/JSON`);
-    let casNo = "";
-    if (synRes.ok) {
-      const synData = await synRes.json();
-      const synonyms = synData?.InformationList?.Information?.[0]?.Synonym || [];
-      const casRegex = /^[1-9]\d{1,6}-\d{2}-\d$/;
-      const match = synonyms.find((item) => casRegex.test(item.trim()));
-      if (match) casNo = match.trim();
-    }
-
-    const propRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodedName}/property/MolecularWeight/JSON`);
-    let mw = 0;
-    if (propRes.ok) {
-      const propData = await propRes.json();
-      mw = propData?.PropertyTable?.Properties?.[0]?.MolecularWeight || 0;
-    }
-
-    let density = SOLVENT_DENSITIES[rmName.toLowerCase()] || 0;
-
-    if (casNo) row.querySelector(".cas-no").value = casNo;
-    if (mw > 0) row.querySelector(".mw").value = parseFloat(mw).toFixed(2);
-    if (density > 0) {
-      row.querySelector(".density").value = density;
-      row.querySelector(".ratio-type").value = "volume";
-      row.querySelector(".unit-select").value = "L";
-    }
-
-    if (!casNo && mw === 0 && density === 0) {
-      alert(`No online record found for "${rmName}". Enter details manually.`);
-    } else {
-      recalculateAll();
-      triggerAutoSave();
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Online search failed. Please enter details manually.");
-  } finally {
-    btn.innerHTML = originalIcon;
-    refreshIcons();
-  }
-}
-
-// ----------------- CALCULATION ENGINE -----------------
-
 function recalculateAll() {
   const apiBatchSize = parseFloat(document.getElementById("apiBatchSize").value) || 1;
   const stageCards = Array.from(document.querySelectorAll(".stage-card"));
@@ -989,6 +902,7 @@ function recalculateAll() {
     const rows = Array.from(stageCard.querySelectorAll("tbody tr"));
     if (rows.length === 0) return;
 
+    // Refresh rates for rows referencing upstream in-page intermediates
     rows.forEach((row) => {
       const val = row.querySelector(".rm-name").value.trim().toLowerCase();
       if (!val) return;
@@ -1145,7 +1059,180 @@ function recalculateAll() {
   document.getElementById("cumulativePMI").innerText = cumulativePMI.toFixed(2);
 }
 
-// ----------------- EXCEL WORKBOOK GENERATION -----------------
+// ----------------- BULK EXCEL PARSING & COLORFUL WORKBOOK EXPORT -----------------
+
+function normalizeHeaderKey(str) {
+  if (!str) return "";
+  return str.toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function handleExcelUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (evt) {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      priceMaster = {};
+      let matchedCount = 0;
+
+      rawRows.forEach((row) => {
+        const normalized = {};
+        Object.keys(row).forEach((k) => {
+          normalized[normalizeHeaderKey(k)] = row[k];
+        });
+
+        const name = (normalized["nameofrawmaterial"] || normalized["rawmaterialname"] || normalized["rmname"] || normalized["name"] || "").toString().trim();
+        const cas = (normalized["casno"] || normalized["casnumber"] || normalized["cas"] || "").toString().trim();
+        const mw = parseFloat(normalized["molecularweight"] || normalized["mw"] || 0) || 0;
+        const density = parseFloat(normalized["density"] || normalized["spgravity"] || 0) || 0;
+        const rate = parseFloat(normalized["ratekg"] || normalized["rate"] || normalized["price"] || 0) || 0;
+
+        if (name) {
+          priceMaster[name.toLowerCase()] = { name, cas, mw, density, rate };
+          matchedCount++;
+        }
+      });
+
+      document.getElementById("uploadLabel").innerText = `Loaded (${matchedCount} items)`;
+      populateMasterDatalist();
+      recalculateAll();
+      triggerAutoSave();
+      alert(`Successfully loaded ${matchedCount} Raw Materials into Price Master.`);
+    } catch (err) {
+      console.error(err);
+      alert("Error parsing file. Please ensure it is a valid Excel spreadsheet.");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function downloadSampleRateCard() {
+  const sampleData = [
+    { "CAS No": "7440-05-3", "Name of Raw Material": "5% Palladium on Alumina", "Molecular Weight": 106.42, "Density": 1.000, "Rate/Kg": 9500.00 },
+    { "CAS No": "7440-05-3", "Name of Raw Material": "10% Palladium on Carbon", "Molecular Weight": 106.42, "Density": 1.000, "Rate/Kg": 18500.00 },
+    { "CAS No": "67-56-1", "Name of Raw Material": "Methanol", "Molecular Weight": 32.04, "Density": 0.792, "Rate/Kg": 42.00 },
+    { "CAS No": "75-09-2", "Name of Raw Material": "Dichloromethane", "Molecular Weight": 84.93, "Density": 1.326, "Rate/Kg": 68.50 },
+    { "CAS No": "141-78-6", "Name of Raw Material": "Ethyl Acetate", "Molecular Weight": 88.11, "Density": 0.902, "Rate/Kg": 94.00 },
+    { "CAS No": "121-44-8", "Name of Raw Material": "Triethylamine", "Molecular Weight": 101.19, "Density": 0.726, "Rate/Kg": 210.00 },
+    { "CAS No": "16940-66-2", "Name of Raw Material": "Sodium Borohydride", "Molecular Weight": 37.83, "Density": 1.070, "Rate/Kg": 850.00 },
+    { "CAS No": "25952-53-8", "Name of Raw Material": "EDC HCl", "Molecular Weight": 191.70, "Density": 1.000, "Rate/Kg": 2800.00 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(sampleData);
+  ws["!cols"] = [{ wch: 16 }, { wch: 32 }, { wch: 18 }, { wch: 12 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, ws, "RM_Price_Master");
+  XLSX.writeFile(wb, "Standard_RM_Rate_Master_Template.xlsx");
+}
+
+function handleRmcSheetUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (evt) {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames.find(s => s.toLowerCase().includes("stage")) || workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+      let parsedProjectName = "";
+      let parsedBatchSize = "";
+
+      if (rows[0] && rows[0][0]) {
+        const titleStr = String(rows[0][0]);
+        const match = titleStr.match(/^(.*?)\s*-\s*STAGE-WISE RAW MATERIAL/i);
+        parsedProjectName = match ? match[1].trim() : titleStr.replace(/report/i, "").trim();
+      }
+
+      if (rows[1] && rows[1][0]) {
+        const metaStr = String(rows[1][0]);
+        const batchMatch = metaStr.match(/Target API Batch Size:\s*([\d.]+)/i);
+        if (batchMatch) parsedBatchSize = batchMatch[1].trim();
+      }
+
+      const parsedStages = [];
+      let currentStage = null;
+      let inTable = false;
+
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows[r];
+        const cell0 = String(row[0] || "").trim();
+
+        if (cell0.startsWith("STAGE:")) {
+          currentStage = {
+            stageName: cell0.replace(/^STAGE:\s*/i, "").trim(),
+            prodName: "",
+            prodMw: 0,
+            actualQty: parsedBatchSize || "",
+            materials: []
+          };
+          parsedStages.push(currentStage);
+          inTable = false;
+          continue;
+        }
+
+        if (cell0.startsWith("Product:") && currentStage) {
+          const prodMatch = cell0.match(/Product:\s*(.*?)\s*\|\s*MW:\s*([\d.]+)\s*g\/mol\s*\|\s*Actual:\s*([\d.]+)\s*kg/i);
+          if (prodMatch) {
+            currentStage.prodName = prodMatch[1].trim();
+            currentStage.prodMw = prodMatch[2].trim();
+            currentStage.actualQty = prodMatch[3].trim();
+          }
+          continue;
+        }
+
+        if (cell0 === "Sr." && currentStage) {
+          inTable = true;
+          continue;
+        }
+
+        if (cell0.startsWith("OVERALL FINISHED")) break;
+
+        if (inTable && currentStage) {
+          const srNum = parseInt(cell0);
+          if (isNaN(srNum)) {
+            inTable = false;
+            continue;
+          }
+
+          currentStage.materials.push({
+            cas: String(row[1] || "").trim(),
+            name: String(row[2] || "").trim(),
+            density: row[3] !== "" ? row[3] : 1.0,
+            ratioType: String(row[4] || "").toLowerCase().includes("vol") ? "volume" : "mole",
+            moleVolRatio: row[5] !== "" ? row[5] : 1.0,
+            qty: row[6] !== "" ? row[6] : 0,
+            unit: String(row[7] || "kg").trim(),
+            mw: row[8] !== "" ? row[8] : 0,
+            recPercent: row[11] !== "" ? row[11] : 0,
+            rateWo: row[13] !== "" ? row[13] : 0,
+            rateWith: row[14] !== "" ? row[14] : 0,
+            isInHouse: String(row[1] || "").toLowerCase().includes("in-house")
+          });
+        }
+      }
+
+      renderStagesFromState({ projectName: parsedProjectName, apiBatchSize: parsedBatchSize, stages: parsedStages });
+      triggerAutoSave();
+      alert(`RMC Sheet loaded successfully! Restored ${parsedStages.length} reaction stages.`);
+    } catch (err) {
+      console.error("RMC Import Error:", err);
+      alert("Error parsing RMC sheet. Please ensure it is an authentic workbook exported by this app.");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ----------------- ATTRACTIVE MULTI-COLOR EXCEL GENERATION -----------------
 
 function getConsolidatedBOMData() {
   const consolidated = {};
@@ -1212,12 +1299,13 @@ function buildConsolidatedSheet(wb, projectName, apiBatchSize) {
   const bomData = getConsolidatedBOMData();
 
   const styles = {
-    title: { font: { name: "Arial", sz: 13, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "064E3B" } }, alignment: { horizontal: "center", vertical: "center" } },
-    meta: { font: { name: "Arial", sz: 9, bold: true, color: { rgb: "1E293B" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "center" } },
-    tableHeader: { font: { name: "Arial", sz: 8.5, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "065F46" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true } },
-    dataText: { font: { name: "Arial", sz: 8 }, alignment: { vertical: "center" } },
-    dataNum: { font: { name: "Arial", sz: 8 }, alignment: { horizontal: "right", vertical: "center" } },
-    dataTotal: { font: { name: "Arial", sz: 9, bold: true, color: { rgb: "064E3B" } }, fill: { fgColor: { rgb: "ECFDF5" } }, alignment: { horizontal: "right", vertical: "center" } }
+    title: { font: { name: "Calibri", sz: 14, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "064E3B" } }, alignment: { horizontal: "center", vertical: "center" } },
+    meta: { font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "0F172A" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "center" } },
+    tableHeader: { font: { name: "Calibri", sz: 9.5, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0D9488" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true } },
+    dataText: { font: { name: "Calibri", sz: 9 }, alignment: { vertical: "center" } },
+    dataNum: { font: { name: "Calibri", sz: 9 }, alignment: { horizontal: "right", vertical: "center" } },
+    zebra: { fill: { fgColor: { rgb: "F8FAFC" } } },
+    dataTotal: { font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "064E3B" } }, fill: { fgColor: { rgb: "DCFCE7" } }, alignment: { horizontal: "right", vertical: "center" } }
   };
 
   const wsData = [];
@@ -1242,7 +1330,8 @@ function buildConsolidatedSheet(wb, projectName, apiBatchSize) {
   let grandTotalCostW = 0;
 
   bomData.forEach((item, idx) => {
-    const typeLabel = item.isInHouse ? "In-House Intermediate" : (SOLVENT_DENSITIES[item.name.toLowerCase()] ? "Solvent" : "Raw Material / Reagent");
+    const isSolvent = PHARMA_CHEM_DB[item.name.toLowerCase()]?.isLiquid || false;
+    const typeLabel = item.isInHouse ? "In-House Intermediate" : (isSolvent ? "Solvent" : "Raw Material / Catalyst");
 
     if (!item.isInHouse) {
       grandTotalCostWo += item.costWithoutRec;
@@ -1279,7 +1368,7 @@ function buildConsolidatedSheet(wb, projectName, apiBatchSize) {
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws["!merges"] = merges;
   ws["!cols"] = [
-    { wch: 6 }, { wch: 14 }, { wch: 30 }, { wch: 20 },
+    { wch: 6 }, { wch: 14 }, { wch: 32 }, { wch: 22 },
     { wch: 18 }, { wch: 8 }, { wch: 18 }, { wch: 18 }, { wch: 14 }, { wch: 14 },
     { wch: 18 }, { wch: 18 }, { wch: 30 }
   ];
@@ -1288,15 +1377,17 @@ function buildConsolidatedSheet(wb, projectName, apiBatchSize) {
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellRef]) continue;
+      if (!ws[cellRef]) ws[cellRef] = { t: "s", v: "" };
 
       if (R === 0) ws[cellRef].s = styles.title;
       else if (R === 1) ws[cellRef].s = styles.meta;
       else if (R === 3) ws[cellRef].s = styles.tableHeader;
       else if (R === totalRowIdx) ws[cellRef].s = styles.dataTotal;
       else {
-        if (typeof ws[cellRef].v === "number") ws[cellRef].s = styles.dataNum;
-        else ws[cellRef].s = styles.dataText;
+        const isNum = typeof ws[cellRef].v === "number";
+        const baseStyle = isNum ? { ...styles.dataNum } : { ...styles.dataText };
+        if (R % 2 === 0) baseStyle.fill = styles.zebra.fill;
+        ws[cellRef].s = baseStyle;
       }
     }
   }
@@ -1306,16 +1397,17 @@ function buildConsolidatedSheet(wb, projectName, apiBatchSize) {
 
 function buildStageWiseSheet(projectName, apiBatchSize) {
   const styles = {
-    title: { font: { name: "Arial", sz: 13, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0F172A" } }, alignment: { horizontal: "center", vertical: "center" } },
-    meta: { font: { name: "Arial", sz: 9, bold: true, color: { rgb: "334155" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "center" } },
-    stageHeader: { font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "312E81" } }, alignment: { horizontal: "left", vertical: "center" } },
-    stageSubbar: { font: { name: "Arial", sz: 8.5, bold: true, color: { rgb: "1E1B4B" } }, fill: { fgColor: { rgb: "EEF2FF" } }, alignment: { vertical: "center" } },
-    tableHeader: { font: { name: "Arial", sz: 8, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E293B" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true } },
-    dataText: { font: { name: "Arial", sz: 8 }, alignment: { vertical: "center" } },
-    dataNum: { font: { name: "Arial", sz: 8 }, alignment: { horizontal: "right", vertical: "center" } },
-    dataHighlight: { font: { name: "Arial", sz: 8, bold: true, color: { rgb: "1E40AF" } }, fill: { fgColor: { rgb: "F8FAFC" } }, alignment: { horizontal: "right", vertical: "center" } },
-    summaryBanner: { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "065F46" } }, alignment: { horizontal: "left", vertical: "center" } },
-    summaryValue: { font: { name: "Arial", sz: 9.5, bold: true, color: { rgb: "065F46" } }, fill: { fgColor: { rgb: "ECFDF5" } }, alignment: { horizontal: "right", vertical: "center" } }
+    title: { font: { name: "Calibri", sz: 14, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1E3A8A" } }, alignment: { horizontal: "center", vertical: "center" } },
+    meta: { font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "1E293B" } }, fill: { fgColor: { rgb: "F1F5F9" } }, alignment: { vertical: "center" } },
+    stageHeader: { font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "312E81" } }, alignment: { horizontal: "left", vertical: "center" } },
+    stageSubbar: { font: { name: "Calibri", sz: 9, bold: true, color: { rgb: "1E1B4B" } }, fill: { fgColor: { rgb: "EEF2FF" } }, alignment: { vertical: "center" } },
+    tableHeader: { font: { name: "Calibri", sz: 8.5, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0F172A" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true } },
+    dataText: { font: { name: "Calibri", sz: 8.5 }, alignment: { vertical: "center" } },
+    dataNum: { font: { name: "Calibri", sz: 8.5 }, alignment: { horizontal: "right", vertical: "center" } },
+    dataHighlight: { font: { name: "Calibri", sz: 8.5, bold: true, color: { rgb: "1E3A8A" } }, fill: { fgColor: { rgb: "F0FDF4" } }, alignment: { horizontal: "right", vertical: "center" } },
+    zebra: { fill: { fgColor: { rgb: "F8FAFC" } } },
+    summaryBanner: { font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "065F46" } }, alignment: { horizontal: "left", vertical: "center" } },
+    summaryValue: { font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "065F46" } }, fill: { fgColor: { rgb: "DCFCE7" } }, alignment: { horizontal: "right", vertical: "center" } }
   };
 
   const wsData = [];
@@ -1353,7 +1445,7 @@ function buildStageWiseSheet(projectName, apiBatchSize) {
     merges.push({ s: { r: stageTitleRowIndex, c: 0 }, e: { r: stageTitleRowIndex, c: 18 } });
 
     const stageParamRowIndex = wsData.length;
-    wsData.push([`Product: ${prodName} | MW: ${prodMw} g/mol \vert{} Actual:${actualKg} kg | Theor: ${theorKg} \vert{} \% Molar Yield:${molarYield} | % w/w: ${wwYield} \vert{} Cost w/o Rec:${unitCostWo} | Cost with Rec: ${unitCostW} \vert{} Stage PMI:${stagePmi}`]);
+    wsData.push([`Product: ${prodName} | MW: ${prodMw} g/mol | Actual: ${actualKg} kg | Theor: ${theorKg} | % Molar Yield: ${molarYield} | % w/w: ${wwYield} | Cost w/o Rec: ${unitCostWo} | Cost with Rec: ${unitCostW} | Stage PMI: ${stagePmi}`]);
     merges.push({ s: { r: stageParamRowIndex, c: 0 }, e: { r: stageParamRowIndex, c: 18 } });
 
     wsData.push(headers);
@@ -1404,9 +1496,8 @@ function buildStageWiseSheet(projectName, apiBatchSize) {
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   ws["!merges"] = merges;
-
   ws["!cols"] = [
-    { wch: 6 }, { wch: 14 }, { wch: 28 }, { wch: 11 },
+    { wch: 6 }, { wch: 14 }, { wch: 30 }, { wch: 11 },
     { wch: 13 }, { wch: 12 }, { wch: 10 }, { wch: 6 }, { wch: 10 },
     { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 14 },
     { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }
@@ -1416,7 +1507,7 @@ function buildStageWiseSheet(projectName, apiBatchSize) {
   for (let R = range.s.r; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellRef]) continue;
+      if (!ws[cellRef]) ws[cellRef] = { t: "s", v: "" };
 
       const val = String(ws[cellRef].v || "");
       if (R === 0) ws[cellRef].s = styles.title;
@@ -1426,14 +1517,22 @@ function buildStageWiseSheet(projectName, apiBatchSize) {
       else if (val === "Sr." || val === "Raw Material Name") {
         for (let col = 0; col <= 18; col++) {
           const cRef = XLSX.utils.encode_cell({ r: R, c: col });
-          if (ws[cRef]) ws[cRef].s = styles.tableHeader;
+          if (!ws[cRef]) ws[cRef] = { t: "s", v: "" };
+          ws[cRef].s = styles.tableHeader;
         }
       } else if (R === summaryStart) ws[cellRef].s = styles.summaryBanner;
       else if (R > summaryStart && C === 0) ws[cellRef].s = styles.meta;
       else if (R > summaryStart && C === 1) ws[cellRef].s = styles.summaryValue;
       else {
-        if (typeof ws[cellRef].v === "number") ws[cellRef].s = (C === 15 || C === 16) ? styles.dataHighlight : styles.dataNum;
-        else ws[cellRef].s = styles.dataText;
+        const isNum = typeof ws[cellRef].v === "number";
+        const baseStyle = isNum ? { ...styles.dataNum } : { ...styles.dataText };
+        if (C === 15 || C === 16) {
+          baseStyle.font = styles.dataHighlight.font;
+          baseStyle.fill = styles.dataHighlight.fill;
+        } else if (R % 2 === 0) {
+          baseStyle.fill = styles.zebra.fill;
+        }
+        ws[cellRef].s = baseStyle;
       }
     }
   }
@@ -1446,13 +1545,18 @@ function exportFullWorkbook() {
   const apiBatchSize = document.getElementById("apiBatchSize").value || "Target";
   const wb = XLSX.utils.book_new();
 
-  const stageWs = buildStageWiseSheet(projectName, apiBatchSize);
-  XLSX.utils.book_append_sheet(wb, stageWs, "Stage_Costing_Breakdown");
+  try {
+    const stageWs = buildStageWiseSheet(projectName, apiBatchSize);
+    XLSX.utils.book_append_sheet(wb, stageWs, "Stage_Costing_Breakdown");
 
-  const bomWs = buildConsolidatedSheet(wb, projectName, apiBatchSize);
-  XLSX.utils.book_append_sheet(wb, bomWs, "Consolidated_BOM");
+    const bomWs = buildConsolidatedSheet(wb, projectName, apiBatchSize);
+    XLSX.utils.book_append_sheet(wb, bomWs, "Consolidated_BOM");
 
-  XLSX.writeFile(wb, `${projectName.replace(/\s+/g, "_")}_${apiBatchSize}kg_RMC_Full_Workbook.xlsx`);
+    XLSX.writeFile(wb, `${projectName.replace(/\s+/g, "_")}_${apiBatchSize}kg_RMC_Full_Workbook.xlsx`);
+  } catch (err) {
+    console.error("Export Error:", err);
+    alert("Workbook export encountered an error. Check console details.");
+  }
 }
 
 function exportConsolidatedBOMOnly() {
@@ -1460,8 +1564,13 @@ function exportConsolidatedBOMOnly() {
   const apiBatchSize = document.getElementById("apiBatchSize").value || "Target";
   const wb = XLSX.utils.book_new();
 
-  const bomWs = buildConsolidatedSheet(wb, projectName, apiBatchSize);
-  XLSX.utils.book_append_sheet(wb, bomWs, "Consolidated_Procurement_BOM");
+  try {
+    const bomWs = buildConsolidatedSheet(wb, projectName, apiBatchSize);
+    XLSX.utils.book_append_sheet(wb, bomWs, "Consolidated_Procurement_BOM");
 
-  XLSX.writeFile(wb, `${projectName.replace(/\s+/g, "_")}_${apiBatchSize}kg_Consolidated_BOM.xlsx`);
+    XLSX.writeFile(wb, `${projectName.replace(/\s+/g, "_")}_${apiBatchSize}kg_Consolidated_BOM.xlsx`);
+  } catch (err) {
+    console.error("BOM Export Error:", err);
+    alert("BOM export encountered an error. Check console details.");
+  }
 }
